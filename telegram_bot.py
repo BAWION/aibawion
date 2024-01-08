@@ -41,6 +41,7 @@ def send_news(update, context):
 def send_latest_news(update, context):
     # Добавьте здесь код для функции send_latest_news
 
+
 def main():
     token = os.getenv('TELEGRAM_BOT_TOKEN')
     updater = Updater(token, use_context=True)
