@@ -7,11 +7,37 @@ def parse_news(url):
     soup = BeautifulSoup(response.content, 'html.parser')
 
     articles = []
-    for article in soup.find_all('article'):
-        title = article.find('h2').text.strip()
-        summary = article.find('p').text.strip()
-        image_url = article.find('img')['src']
+    for article in soup.find_all('a', class_='link-block-8'):
+        # Найти заголовок новости
+        title = article.find('div', class_='text-block-27')
+        title_text = title.text.strip() if title else 'Нет заголовка'
 
-        articles.append({'title': title, 'summary': summary, 'image_url': image_url})
+        # Найти домен источника новости
+        source = article.find('div', class_='text-block-28')
+        source_text = source.text.strip() if source else 'Нет источника'
+
+        # Найти URL изображения
+        image = article.find('img')
+        image_url = image['src'] if image and 'src' in image.attrs else 'URL изображения отсутствует'
+
+        # Собрать URL новости
+        news_url = article['href'] if 'href' in article.attrs else 'URL новости отсутствует'
+
+        articles.append({
+            'title': title_text,
+            'source': source_text,
+            'image_url': image_url,
+            'news_url': news_url
+        })
 
     return articles
+
+# Пример использования функции
+if __name__ == '__main__':
+    url = 'https://www.futuretools.io/news'  # URL сайта для парсинга
+    news_articles = parse_news(url)
+    for article in news_articles:
+        print(f"Заголовок: {article['title']}")
+        print(f"Источник: {article['source']}")
+        print(f"URL изображения: {article['image_url']}")
+        print(f"URL новости: {article['news_url']}\n")
