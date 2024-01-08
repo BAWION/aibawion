@@ -45,14 +45,19 @@ def send_latest_news(update, context):
         url = 'https://www.futuretools.io/news'
         articles = parse_news(url)
 
-        if articles:
+        if articles and is_new_article(articles[0], 'last_published_article.txt'):
             article = articles[0]
             title = translate_text(article['title'])
-            # ... код отправки новости ...
+            source = article['source']
+            news_url = article['news_url']
+            image_url = article['image_url']
+
+            message = f"{title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
             context.bot.send_message(chat_id=channel_name, text=message, parse_mode='Markdown')
+            update_last_published_article(article, 'last_published_article.txt')
             logger.info(f"Отправляется последняя новость: {title}")
         else:
-            logger.info("Новостей для отправки нет")
+            logger.info("Новых новостей нет или новость уже была опубликована")
     except Exception as e:
         logger.error(f"Ошибка при отправке сообщения: {e}")
 
