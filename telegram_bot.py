@@ -51,8 +51,9 @@ def send_latest_news(update, context):
     articles = parse_news(url)
 
     if articles:
+        # Сортировка новостей по дате в обратном порядке
         articles.sort(key=lambda x: datetime.strptime(x['date'], '%B %d, %Y'), reverse=True)
-        latest_article = articles[0]
+        latest_article = articles[0]  # Выбор самой последней новости
 
         title = translate_text(latest_article['title'])
         source = latest_article['source']
@@ -62,6 +63,10 @@ def send_latest_news(update, context):
         message = f"{title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
         context.bot.send_message(chat_id=channel_name, text=message, parse_mode='Markdown')
         logger.info(f"Отправляется последняя новость: {title}")
+
+        # Обновление даты последней опубликованной новости
+        latest_article_date = datetime.strptime(latest_article['date'], '%B %d, %Y')
+        update_last_published_article(latest_article_date, 'last_published_article.txt')
     else:
         logger.info("Новых новостей нет")
 
