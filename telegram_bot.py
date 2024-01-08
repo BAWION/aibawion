@@ -40,17 +40,21 @@ def send_news(update, context):
 
 def send_latest_news(update, context):
     logger.info("Команда /latestnews вызвана")
-    channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@your_default_channel_name')
-    url = 'https://www.futuretools.io/news'
-    articles = parse_news(url)
+    try:
+        channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@your_default_channel_name')
+        url = 'https://www.futuretools.io/news'
+        articles = parse_news(url)
 
-    if articles:
-        article = articles[0]  # Предполагаем, что последняя новость - первая в списке
-        title = translate_text(article['title'])
-        # ... код отправки новости ...
-        logger.info(f"Отправляется последняя новость: {title}")
-    else:
-        logger.info("Новостей для отправки нет")
+        if articles:
+            article = articles[0]
+            title = translate_text(article['title'])
+            # ... код отправки новости ...
+            context.bot.send_message(chat_id=channel_name, text=message, parse_mode='Markdown')
+            logger.info(f"Отправляется последняя новость: {title}")
+        else:
+            logger.info("Новостей для отправки нет")
+    except Exception as e:
+        logger.error(f"Ошибка при отправке сообщения: {e}")
 
 def main():
     token = os.getenv('TELEGRAM_BOT_TOKEN')
