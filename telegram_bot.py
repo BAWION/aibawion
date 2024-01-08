@@ -1,4 +1,3 @@
-
 import os
 import logging
 from telegram.ext import Updater, CommandHandler
@@ -40,7 +39,7 @@ def send_news(update, context):
         logger.info("Новых новостей нет")
 
 def send_latest_news(update, context):
-    # Код функции send_latest_news остается прежним
+    # Добавьте здесь код для функции send_latest_news
 
 def main():
     token = os.getenv('TELEGRAM_BOT_TOKEN')
