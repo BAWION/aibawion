@@ -1,9 +1,13 @@
 import os
 import logging
 from datetime import datetime
+import locale
 from telegram.ext import Updater, CommandHandler
 from news_parser import parse_news
 from translator import translate_text
+
+# Установка локали для корректного разбора даты
+locale.setlocale(locale.LC_TIME, 'en_US.UTF-8')
 
 # Настройка логирования
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -13,12 +17,12 @@ logger = logging.getLogger(__name__)
 def is_new_article(article_date, last_published_article_file):
     with open(last_published_article_file, 'r') as file:
         last_published_date_str = file.read().strip()
-        last_published_date = datetime.strptime(last_published_date_str, '%Y-%m-%d %H:%M:%S') if last_published_date_str else datetime.min
+        last_published_date = datetime.strptime(last_published_date_str, '%B %d, %Y') if last_published_date_str else datetime.min
     return article_date > last_published_date
 
 def update_last_published_article(article_date, last_published_article_file):
     with open(last_published_article_file, 'w') as file:
-        file.write(article_date.strftime('%Y-%m-%d %H:%M:%S'))
+        file.write(article_date.strftime('%B %d, %Y'))
 
 def send_news(update, context):
     channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@your_default_channel_name')
@@ -30,7 +34,7 @@ def send_news(update, context):
 
     new_articles = []
     for article in articles:
-        article_date = datetime.strptime(article['date'], '%Y-%m-%d %H:%M:%S')
+        article_date = datetime.strptime(article['date'], '%B %d, %Y')
         if is_new_article(article_date, last_published_article_file):
             new_articles.append(article)
             latest_article_date = max(latest_article_date, article_date)
@@ -55,7 +59,7 @@ def send_latest_news(update, context):
     articles = parse_news(url)
 
     if articles:
-        articles.sort(key=lambda x: datetime.strptime(x['date'], '%Y-%m-%d %H:%M:%S'), reverse=True)
+        articles.sort(key=lambda x: datetime.strptime(x['date'], '%B %d, %Y'), reverse=True)
         latest_article = articles[0]
 
         title = translate_text(latest_article['title'])
