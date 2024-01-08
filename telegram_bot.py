@@ -28,9 +28,15 @@ def send_news(update, context):
     last_published_article_file = 'last_published_article.txt'
     latest_article_date = datetime.min
 
+    new_articles = []
     for article in articles:
-        article_date = datetime.strptime(article['date'], '%Y-%m-%d %H:%M:%S')  # Пример формата даты
+        article_date = datetime.strptime(article['date'], '%Y-%m-%d %H:%M:%S')
         if is_new_article(article_date, last_published_article_file):
+            new_articles.append(article)
+            latest_article_date = max(latest_article_date, article_date)
+
+    if new_articles:
+        for article in new_articles:
             title = translate_text(article['title'])
             source = article['source']
             news_url = article['news_url']
@@ -38,10 +44,8 @@ def send_news(update, context):
 
             message = f"{title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
             context.bot.send_message(chat_id=channel_name, text=message, parse_mode='Markdown')
-            latest_article_date = max(latest_article_date, article_date)
             logger.info(f"Отправляется новость: {title}")
 
-    if latest_article_date > datetime.min:
         update_last_published_article(latest_article_date, last_published_article_file)
 
 def send_latest_news(update, context):
@@ -51,9 +55,7 @@ def send_latest_news(update, context):
     articles = parse_news(url)
 
     if articles:
-        # Сортировка новостей по дате (предполагая, что 'date' - это строка даты)
         articles.sort(key=lambda x: datetime.strptime(x['date'], '%Y-%m-%d %H:%M:%S'), reverse=True)
-        # Выбор самой последней новости
         latest_article = articles[0]
 
         title = translate_text(latest_article['title'])
