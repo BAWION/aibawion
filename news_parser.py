@@ -1,4 +1,3 @@
-
 import requests
 from bs4 import BeautifulSoup
 
@@ -8,6 +7,10 @@ def parse_news(url):
 
     articles = []
     for article in soup.find_all('a', class_='link-block-8'):
+        # Найти дату новости
+        date_div = article.find_previous_sibling('div', class_='text-block-30')
+        date_text = date_div.text.strip() if date_div else 'Дата отсутствует'
+
         # Найти заголовок новости
         title = article.find('div', class_='text-block-27')
         title_text = title.text.strip() if title else 'Нет заголовка'
@@ -24,6 +27,7 @@ def parse_news(url):
         news_url = article['href'] if 'href' in article.attrs else 'URL новости отсутствует'
 
         articles.append({
+            'date': date_text,
             'title': title_text,
             'source': source_text,
             'image_url': image_url,
@@ -37,6 +41,7 @@ if __name__ == '__main__':
     url = 'https://www.futuretools.io/news'  # URL сайта для парсинга
     news_articles = parse_news(url)
     for article in news_articles:
+        print(f"Дата: {article['date']}")
         print(f"Заголовок: {article['title']}")
         print(f"Источник: {article['source']}")
         print(f"URL изображения: {article['image_url']}")
