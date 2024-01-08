@@ -43,13 +43,13 @@ def send_latest_news(update, context):
     # (Убедитесь, что здесь используются правильные отступы)
 
 def main():
-        token = os.getenv('TELEGRAM_BOT_TOKEN')
-        updater = Updater(token, use_context=True)
-        dp = updater.dispatcher
-        dp.add_handler(CommandHandler('sendnews', send_news))
-        dp.add_handler(CommandHandler('latestnews', send_latest_news))
-        updater.start_polling()
-        updater.idle()
+    token = os.getenv('TELEGRAM_BOT_TOKEN')
+    updater = Updater(token, use_context=True)
+    dp = updater.dispatcher
+    dp.add_handler(CommandHandler('sendnews', send_news))
+    dp.add_handler(CommandHandler('latestnews', send_latest_news))
+    updater.start_polling()
+    updater.idle()
 
 if __name__ == '__main__':
-        main()
+    main()
