@@ -42,6 +42,7 @@ def send_latest_news(update, context):
     # Тело функции send_latest_news
     # (Убедитесь, что здесь используются правильные отступы)
 
+
 def main():
     token = os.getenv('TELEGRAM_BOT_TOKEN')
     updater = Updater(token, use_context=True)
@@ -50,6 +51,9 @@ def main():
     dp.add_handler(CommandHandler('latestnews', send_latest_news))
     updater.start_polling()
     updater.idle()
+
+
+
 
 if __name__ == '__main__':
     main()
