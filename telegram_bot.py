@@ -39,8 +39,18 @@ def send_news(update, context):
         logger.info("Новых новостей нет")
 
 def send_latest_news(update, context):
-    # Тело функции send_latest_news
-    pass  # Добавьте здесь ваш код для send_latest_news
+    logger.info("Команда /latestnews вызвана")
+    channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@your_default_channel_name')
+    url = 'https://www.futuretools.io/news'
+    articles = parse_news(url)
+
+    if articles:
+        article = articles[0]  # Предполагаем, что последняя новость - первая в списке
+        title = translate_text(article['title'])
+        # ... код отправки новости ...
+        logger.info(f"Отправляется последняя новость: {title}")
+    else:
+        logger.info("Новостей для отправки нет")
 
 def main():
     token = os.getenv('TELEGRAM_BOT_TOKEN')
