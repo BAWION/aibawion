@@ -44,6 +44,26 @@ def send_news(update, context):
     if latest_article_date > datetime.min:
         update_last_published_article(latest_article_date, last_published_article_file)
 
+def send_latest_news(update, context):
+    logger.info("Команда /latestnews вызвана")
+    channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@your_default_channel_name')
+    url = 'https://www.futuretools.io/news'
+    articles = parse_news(url)
+
+    if articles:
+        # Отправка только последней новости
+        article = articles[-1]
+        title = translate_text(article['title'])
+        source = article['source']
+        news_url = article['news_url']
+        image_url = article['image_url']
+
+        message = f"{title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
+        context.bot.send_message(chat_id=channel_name, text=message, parse_mode='Markdown')
+        logger.info(f"Отправляется последняя новость: {title}")
+    else:
+        logger.info("Новых новостей нет")
+
 def main():
     token = os.getenv('TELEGRAM_BOT_TOKEN')
     updater = Updater(token, use_context=True)
