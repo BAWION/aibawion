@@ -38,13 +38,11 @@ def send_news(update, context):
     else:
         logger.info("Новых новостей нет")
 
-
 def send_latest_news(update, context):
     # Тело функции send_latest_news
+    pass  # Добавьте здесь ваш код для send_latest_news
 
-# Проверьте, что перед def main(): нет никаких отступов
 def main():
-    # Каждая из следующих строк должна начинаться с четырех пробелов
     token = os.getenv('TELEGRAM_BOT_TOKEN')
     updater = Updater(token, use_context=True)
     dp = updater.dispatcher
@@ -53,8 +51,5 @@ def main():
     updater.start_polling()
     updater.idle()
 
-# То же самое для этого блока: без отступов перед if
 if __name__ == '__main__':
-    # Четыре пробела перед main()
     main()
-
