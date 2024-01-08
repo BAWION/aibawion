@@ -51,12 +51,15 @@ def send_latest_news(update, context):
     articles = parse_news(url)
 
     if articles:
-        # Отправка только последней новости
-        article = articles[-1]
-        title = translate_text(article['title'])
-        source = article['source']
-        news_url = article['news_url']
-        image_url = article['image_url']
+        # Сортировка новостей по дате (предполагая, что 'date' - это строка даты)
+        articles.sort(key=lambda x: datetime.strptime(x['date'], '%Y-%m-%d %H:%M:%S'), reverse=True)
+        # Выбор самой последней новости
+        latest_article = articles[0]
+
+        title = translate_text(latest_article['title'])
+        source = latest_article['source']
+        news_url = latest_article['news_url']
+        image_url = latest_article['image_url']
 
         message = f"{title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
         context.bot.send_message(chat_id=channel_name, text=message, parse_mode='Markdown')
