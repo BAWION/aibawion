@@ -66,12 +66,6 @@ def send_news(context):
         update_last_published_article(latest_article_date, last_published_article_file)
 
 def main():
-    # Настройка логирования
-    logging.basicConfig(
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        level=logging.INFO
-    )
-    logger = logging.getLogger(__name__)
 
     token = os.getenv('TELEGRAM_BOT_TOKEN')
     updater = Updater(token, use_context=True)
