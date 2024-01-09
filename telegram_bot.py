@@ -67,9 +67,8 @@ def send_news(context: CallbackContext):
                     latest_article_date = max(latest_article_date, article_date)
                 except Exception as e:
                     logger.error(f"Ошибка при отправке новости {title}: {e}")
-
             else:
-                logger.info(f"Статья {title} уже была отправлена или дата публикации старее последней опубликованной новости.")
+                logger.info("Статья не прошла проверку is_new_article и не будет отправлена.")
 
         if latest_article_date > datetime.min:
             update_last_published_article(latest_article_date, last_published_article_file)
