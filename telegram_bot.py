@@ -1,10 +1,10 @@
 import os
 import logging
 from datetime import datetime
+from functools import partial
 from telegram.ext import Updater, CommandHandler, CallbackContext
 from apscheduler.schedulers.background import BackgroundScheduler
 import pytz
-from functools import partial
 
 from news_parser import parse_news
 from translator import translate_text
@@ -66,12 +66,15 @@ def send_news(context: CallbackContext):
     if latest_article_date > datetime.min:
         update_last_published_article(latest_article_date, last_published_article_file)
 
+def manual_send_news(update, context: CallbackContext):
+    send_news(context)
+
 def main():
     token = os.getenv('TELEGRAM_BOT_TOKEN')
     updater = Updater(token, use_context=True)
 
     dp = updater.dispatcher
-    dp.add_handler(CommandHandler('sendnews', send_news))
+    dp.add_handler(CommandHandler('sendnews', manual_send_news))
 
     # Настройка планировщика для регулярной отправки новостей
     scheduler = BackgroundScheduler(timezone=pytz.utc)
