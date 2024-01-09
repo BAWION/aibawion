@@ -41,6 +41,7 @@ def send_news(context: CallbackContext):
     logger.info(f"Начало отправки новостей в канал {channel_name}")
     url = 'https://www.futuretools.io/news'
     articles = parse_news(url)
+
     if not articles:
         logger.info("Новостей для отправки нет.")
         return
@@ -49,25 +50,30 @@ def send_news(context: CallbackContext):
     latest_article_date = datetime.min
 
     for article in articles:
-        try:
-            article_date = datetime.strptime(article['date'], '%B %d, %Y')
-            if is_new_article(article_date, last_published_article_file):
-                title = translate_text(article['title'])
-                source = article['source']
-                news_url = article['news_url']
-                image_url = article['image_url']
+        article_date = datetime.strptime(article['date'], '%B %d, %Y')
+        if is_new_article(article_date, last_published_article_file):
+            title = translate_text(article['title'])
+            source = article['source']
+            news_url = article['news_url']
+            image_url = article['image_url']
 
-                message = f"{title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
-                logger.info(f"Отправка новости: {title}")
+            message = f"{title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
+            logger.info(f"Обнаружена новая статья для отправки: {title}")
+
+            try:
                 context.bot.send_message(chat_id=channel_name, text=message, parse_mode='Markdown')
-                latest_article_date = max(latest_article_date, article_date)
                 logger.info(f"Новость отправлена: {title}")
-        except Exception as e:
-            logger.error(f"Ошибка при обработке новости: {e}")
+                latest_article_date = max(latest_article_date, article_date)
+            except Exception as e:
+                logger.error(f"Ошибка при отправке новости {title}: {e}")
+
+            else:
+                logger.info(f"Статья {title} уже была отправлена или дата публикации старее последней опубликованной новости.")
 
     if latest_article_date > datetime.min:
         update_last_published_article(latest_article_date, last_published_article_file)
         logger.info(f"Дата последней опубликованной новости обновлена: {latest_article_date.strftime('%B %d, %Y')}")
+
     logger.info("Завершение отправки новостей")
 
 
