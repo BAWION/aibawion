@@ -28,7 +28,7 @@ def send_news(update, context):
     last_published_article_file = 'last_published_article.txt'
     latest_article_date = datetime.min
 
-    for article in sorted(articles, key=lambda x: datetime.strptime(x['date'], '%B %d, %Y'), reverse=True):
+    for article in articles:
         article_date = datetime.strptime(article['date'], '%B %d, %Y')
         if is_new_article(article_date, last_published_article_file):
             title = translate_text(article['title'])
@@ -38,14 +38,32 @@ def send_news(update, context):
 
             message = f"{title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
             context.bot.send_message(chat_id=channel_name, text=message, parse_mode='Markdown')
-            logger.info(f"Отправляется новость: {title}")
             latest_article_date = max(latest_article_date, article_date)
+            logger.info(f"Отправляется новость: {title}")
 
     if latest_article_date > datetime.min:
         update_last_published_article(latest_article_date, last_published_article_file)
 
 def send_latest_news(update, context):
-    send_news(update, context)  # Переиспользуем логику send_news для latestnews
+    logger.info("Команда /latestnews вызвана")
+    channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@your_default_channel_name')
+    url = 'https://www.futuretools.io/news'
+    articles = parse_news(url)
+
+    if articles:
+        articles.sort(key=lambda x: datetime.strptime(x['date'], '%B %d, %Y'), reverse=True)
+        latest_article = articles[0]
+
+        title = translate_text(latest_article['title'])
+        source = latest_article['source']
+        news_url = latest_article['news_url']
+        image_url = latest_article['image_url']
+
+        message = f"{title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
+        context.bot.send_message(chat_id=channel_name, text=message, parse_mode='Markdown')
+        logger.info(f"Отправляется последняя новость: {title}")
+    else:
+        logger.info("Новых новостей нет")
 
 def main():
     token = os.getenv('TELEGRAM_BOT_TOKEN')
