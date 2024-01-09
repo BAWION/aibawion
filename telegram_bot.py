@@ -1,12 +1,12 @@
-from apscheduler.schedulers.background import BackgroundScheduler
-import pytz
 import os
 import logging
 from datetime import datetime
 from telegram.ext import Updater, CommandHandler
+from apscheduler.schedulers.background import BackgroundScheduler
+import pytz
+
 from news_parser import parse_news
 from translator import translate_text
-from apscheduler.schedulers.background import BackgroundScheduler
 
 # Настройка логирования
 logging.basicConfig(
@@ -66,15 +66,24 @@ def send_news(context):
         update_last_published_article(latest_article_date, last_published_article_file)
 
 def main():
-    # Настройка планировщика с указанием часового пояса
+    # Настройка логирования
+    logging.basicConfig(
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        level=logging.INFO
+    )
+    logger = logging.getLogger(__name__)
+
+    token = os.getenv('TELEGRAM_BOT_TOKEN')
+    updater = Updater(token, use_context=True)
+
+    dp = updater.dispatcher
+    dp.add_handler(CommandHandler('sendnews', send_news))
+
+    # Настройка планировщика для регулярной отправки новостей
     scheduler = BackgroundScheduler(timezone=pytz.utc)
-    scheduler.add_job(send_news, 'interval', minutes=2, args=(updater.bot,))
+    scheduler.add_job(lambda: send_news(updater.bot), 'interval', minutes=2)
     scheduler.start()
 
-    # Запуск бота
-    updater = Updater(token='YOUR_TELEGRAM_BOT_TOKEN', use_context=True)
-    dp = updater.dispatcher
-    # добавление обработчиков...
     updater.start_polling()
     updater.idle()
 
