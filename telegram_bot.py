@@ -1,4 +1,5 @@
-
+from apscheduler.schedulers.background import BackgroundScheduler
+import pytz
 import os
 import logging
 from datetime import datetime
@@ -65,18 +66,15 @@ def send_news(context):
         update_last_published_article(latest_article_date, last_published_article_file)
 
 def main():
-    token = os.getenv('TELEGRAM_BOT_TOKEN')
-    updater = Updater(token, use_context=True)
-    job_queue = updater.job_queue
-
-    dp = updater.dispatcher
-    dp.add_handler(CommandHandler('sendnews', send_news))
-
-    # Настройка планировщика для регулярной отправки новостей
-    scheduler = BackgroundScheduler()
+    # Настройка планировщика с указанием часового пояса
+    scheduler = BackgroundScheduler(timezone=pytz.utc)
     scheduler.add_job(send_news, 'interval', minutes=2, args=(updater.bot,))
     scheduler.start()
 
+    # Запуск бота
+    updater = Updater(token='YOUR_TELEGRAM_BOT_TOKEN', use_context=True)
+    dp = updater.dispatcher
+    # добавление обработчиков...
     updater.start_polling()
     updater.idle()
 
