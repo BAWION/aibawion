@@ -37,68 +37,69 @@ def update_last_published_article(article_date, last_published_article_file):
         logger.error(f"Ошибка при обновлении файла {last_published_article_file}: {e}")
 
 def send_news(context: CallbackContext):
-    channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@your_default_channel_name')
-    logger.info(f"Начало отправки новостей в канал {channel_name}")
-    url = 'https://www.futuretools.io/news'
-    articles = parse_news(url)
+    try:
+        channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@your_default_channel_name')
+        logger.info(f"Начало отправки новостей в канал {channel_name}")
+        url = 'https://www.futuretools.io/news'
+        articles = parse_news(url)
 
-    if not articles:
-        logger.info("Новостей для отправки нет.")
-        return
+        if not articles:
+            logger.info("Новостей для отправки нет.")
+            return
 
-    last_published_article_file = 'last_published_article.txt'
-    latest_article_date = datetime.min
+        last_published_article_file = 'last_published_article.txt'
+        latest_article_date = datetime.min
 
-    for article in articles:
-        article_date = datetime.strptime(article['date'], '%B %d, %Y')
-        if is_new_article(article_date, last_published_article_file):
-            title = translate_text(article['title'])
-            source = article['source']
-            news_url = article['news_url']
-            image_url = article['image_url']
+        for article in articles:
+            article_date = datetime.strptime(article['date'], '%B %d, %Y')
+            if is_new_article(article_date, last_published_article_file):
+                title = translate_text(article['title'])
+                source = article['source']
+                news_url = article['news_url']
+                image_url = article['image_url']
 
-            message = f"{title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
-            logger.info(f"Обнаружена новая статья для отправки: {title}")
+                message = f"{title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
+                logger.info(f"Обнаружена новая статья для отправки: {title}")
 
-            try:
-                context.bot.send_message(chat_id=channel_name, text=message, parse_mode='Markdown')
-                logger.info(f"Новость отправлена: {title}")
-                latest_article_date = max(latest_article_date, article_date)
-            except Exception as e:
-                logger.error(f"Ошибка при отправке новости {title}: {e}")
+                try:
+                    context.bot.send_message(chat_id=channel_name, text=message, parse_mode='Markdown')
+                    logger.info(f"Новость отправлена: {title}")
+                    latest_article_date = max(latest_article_date, article_date)
+                except Exception as e:
+                    logger.error(f"Ошибка при отправке новости {title}: {e}")
 
             else:
                 logger.info(f"Статья {title} уже была отправлена или дата публикации старее последней опубликованной новости.")
 
-    if latest_article_date > datetime.min:
-        update_last_published_article(latest_article_date, last_published_article_file)
-        logger.info(f"Дата последней опубликованной новости обновлена: {latest_article_date.strftime('%B %d, %Y')}")
+        if latest_article_date > datetime.min:
+            update_last_published_article(latest_article_date, last_published_article_file)
+            logger.info(f"Дата последней опубликованной новости обновлена: {latest_article_date.strftime('%B %d, %Y')}")
 
-    logger.info("Завершение отправки новостей")
-
-
-def manual_send_news(update, context: CallbackContext):
-    send_news(context)
+        logger.info("Завершение отправки новостей")
+    except Exception as e:
+        logger.error(f"Произошла ошибка при отправке новостей: {str(e)}")
 
 def manual_send_news(update, context: CallbackContext):
     send_news(context)
 
 def main():
-    token = os.getenv('TELEGRAM_BOT_TOKEN')
-    updater = Updater(token, use_context=True)
+    try:
+        token = os.getenv('TELEGRAM_BOT_TOKEN')
+        updater = Updater(token, use_context=True)
 
-    dp = updater.dispatcher
-    dp.add_handler(CommandHandler('sendnews', manual_send_news))
+        dp = updater.dispatcher
+        dp.add_handler(CommandHandler('sendnews', manual_send_news))
 
-    # Настройка планировщика для регулярной отправки новостей
-    scheduler = BackgroundScheduler(timezone=pytz.utc)
-    job = partial(send_news, context=updater.job_queue)
-    scheduler.add_job(job, 'interval', minutes=2)
-    scheduler.start()
+        # Настройка планировщика для регулярной отправки новостей
+        scheduler = BackgroundScheduler(timezone=pytz.utc)
+        job = partial(send_news, context=updater.job_queue)
+        scheduler.add_job(job, 'interval', minutes=2)
+        scheduler.start()
 
-    updater.start_polling()
-    updater.idle()
+        updater.start_polling()
+        updater.idle()
+    except Exception as e:
+        logger.error(f"Произошла ошибка при запуске бота: {str(e)}")
 
 if __name__ == '__main__':
     main()
-
