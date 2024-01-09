@@ -37,11 +37,10 @@ def update_last_published_article(article_date, last_published_article_file):
         logger.error(f"Ошибка при обновлении файла {last_published_article_file}: {e}")
 
 def send_news(context: CallbackContext):
-    logger.info("Начало функции send_news")
     channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@your_default_channel_name')
+    logger.info(f"Начало отправки новостей в канал {channel_name}")
     url = 'https://www.futuretools.io/news'
     articles = parse_news(url)
-
     if not articles:
         logger.info("Новостей для отправки нет.")
         return
@@ -59,16 +58,18 @@ def send_news(context: CallbackContext):
                 image_url = article['image_url']
 
                 message = f"{title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
+                logger.info(f"Отправка новости: {title}")
                 context.bot.send_message(chat_id=channel_name, text=message, parse_mode='Markdown')
                 latest_article_date = max(latest_article_date, article_date)
-                logger.info(f"Отправляется новость: {title}")
+                logger.info(f"Новость отправлена: {title}")
         except Exception as e:
             logger.error(f"Ошибка при обработке новости: {e}")
 
     if latest_article_date > datetime.min:
         update_last_published_article(latest_article_date, last_published_article_file)
+        logger.info(f"Дата последней опубликованной новости обновлена: {latest_article_date.strftime('%B %d, %Y')}")
+    logger.info("Завершение отправки новостей")
 
-    logger.info("Завершение функции send_news")
 
 def manual_send_news(update, context: CallbackContext):
     send_news(context)
