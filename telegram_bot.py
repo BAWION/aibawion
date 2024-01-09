@@ -69,6 +69,9 @@ def send_news(context: CallbackContext):
 def manual_send_news(update, context: CallbackContext):
     send_news(context)
 
+def manual_send_news(update, context: CallbackContext):
+    send_news(context)
+
 def main():
     token = os.getenv('TELEGRAM_BOT_TOKEN')
     updater = Updater(token, use_context=True)
@@ -87,3 +90,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
