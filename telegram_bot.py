@@ -1,17 +1,18 @@
 import os
 import logging
 from datetime import datetime
-from telegram.ext import Updater, CommandHandler
+from telegram.ext import Updater, CommandHandler, CallbackContext
 from apscheduler.schedulers.background import BackgroundScheduler
 import pytz
+from functools import partial
 
 from news_parser import parse_news
 from translator import translate_text
 
 # Настройка логирования
 logging.basicConfig(
-    filename='bot.log',  # Логи будут сохраняться в файл bot.log
-    filemode='a',  # Добавление к существующему файлу
+    filename='bot.log',
+    filemode='a',
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
@@ -35,7 +36,7 @@ def update_last_published_article(article_date, last_published_article_file):
     except Exception as e:
         logger.error(f"Ошибка при обновлении файла {last_published_article_file}: {e}")
 
-def send_news(context):
+def send_news(context: CallbackContext):
     channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@your_default_channel_name')
     url = 'https://www.futuretools.io/news'
     articles = parse_news(url)
@@ -66,7 +67,6 @@ def send_news(context):
         update_last_published_article(latest_article_date, last_published_article_file)
 
 def main():
-
     token = os.getenv('TELEGRAM_BOT_TOKEN')
     updater = Updater(token, use_context=True)
 
@@ -75,7 +75,8 @@ def main():
 
     # Настройка планировщика для регулярной отправки новостей
     scheduler = BackgroundScheduler(timezone=pytz.utc)
-    scheduler.add_job(lambda: send_news(updater.bot), 'interval', minutes=2)
+    job = partial(send_news, context=updater.job_queue)
+    scheduler.add_job(job, 'interval', minutes=2)
     scheduler.start()
 
     updater.start_polling()
