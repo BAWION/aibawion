@@ -1,8 +1,5 @@
 
-import os
-from googletrans import Translator
+def translate_text(text):
+    # В будущем здесь может быть реализация перевода
+    return text
 
-def translate_text(text, target_language='ru'):
-    translator = Translator()
-    translation = translator.translate(text, dest=target_language)
-    return translation.text
