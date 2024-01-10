@@ -28,9 +28,6 @@ def parse_news(url):
         response.raise_for_status()
         soup = BeautifulSoup(response.content, 'html.parser')
         
-        # Распечатать содержимое soup для отладки
-        print(soup.prettify())
-        
         articles = []
         for article in soup.find_all('div', class_='news-item'):
             # Здесь должен быть код для извлечения информации о новостях из сайта
@@ -39,6 +36,7 @@ def parse_news(url):
     except Exception as e:
         logger.error(f"Ошибка при парсинге новостей: {str(e)}")
         return []
+
 
 # Функция для отправки запроса на генерацию комментария от эксперта
 def generate_expert_commentary(news_text):
