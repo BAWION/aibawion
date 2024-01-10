@@ -9,35 +9,27 @@ def parse_news(url):
     try:
         logger.info(f"Запрос к URL: {url}")
         response = requests.get(url)
-
-        # Проверка статуса ответа
-        if response.status_code != 200:
-            logger.error(f"Ошибка запроса: статус {response.status_code}")
-            return []
-
-        # Проверка MIME-типа содержимого
-        if 'html' not in response.headers['Content-Type']:
-            logger.error("Ошибка: Не HTML содержимое")
-            return []
-
         soup = BeautifulSoup(response.content, 'html.parser')
 
         articles = []
-        for article in soup.find_all('div', class_='news-item'):
-            date_element = article.find('div', class_='date')
+        for item in soup.find_all("div", class_="w-dyn-item"):
+            # Парсинг даты
+            date_element = item.find("div", class_="text-block-30")
             date_text = date_element.text.strip() if date_element else 'Дата отсутствует'
 
-            title_element = article.find('div', class_='title')
+            # Парсинг заголовка и URL новости
+            link_element = item.find("a", class_="link-block-8")
+            title_element = link_element.find("div", class_="text-block-27")
             title_text = title_element.text.strip() if title_element else 'Нет заголовка'
+            news_url = link_element['href'] if link_element and 'href' in link_element.attrs else 'URL новости отсутствует'
 
-            source_element = article.find('div', class_='source')
+            # Парсинг источника
+            source_element = item.find("div", class_="text-block-28")
             source_text = source_element.text.strip() if source_element else 'Нет источника'
 
-            image_element = article.find('img', class_='thumbnail')
+            # Парсинг URL изображения
+            image_element = item.find("img")
             image_url = image_element['src'] if image_element and 'src' in image_element.attrs else 'URL изображения отсутствует'
-
-            news_url_element = article.find('a', class_='news-link')
-            news_url = news_url_element['href'] if news_url_element and 'href' in news_url_element.attrs else 'URL новости отсутствует'
 
             articles.append({
                 'date': date_text,
@@ -61,7 +53,6 @@ def parse_news(url):
 # Пример использования функции
 if __name__ == '__main__':
     url = 'https://www.futuretools.io/news'
-    logger.info("Начало парсинга сайта")
     news_articles = parse_news(url)
     for article in news_articles:
         print(f"Дата: {article['date']}")
@@ -69,4 +60,3 @@ if __name__ == '__main__':
         print(f"Источник: {article['source']}")
         print(f"URL изображения: {article['image_url']}")
         print(f"URL новости: {article['news_url']}\n")
-    logger.info("Завершение парсинга сайта")
