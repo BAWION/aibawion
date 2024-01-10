@@ -36,6 +36,11 @@ def parse_news(url):
                 'news_url': news_url
             })
 
+        if not articles:
+            logger.info("Не найдено новостей на странице")
+        else:
+            logger.info(f"Найдено {len(articles)} новостей")
+
         logger.info("Парсинг завершен успешно")
         return articles
     except Exception as e:
