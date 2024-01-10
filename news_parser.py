@@ -12,20 +12,21 @@ def parse_news(url):
         soup = BeautifulSoup(response.content, 'html.parser')
 
         articles = []
-        for article in soup.find_all('a', class_='link-block-8'):
-            date_div = article.find_previous_sibling('div', class_='text-block-30')
-            date_text = date_div.text.strip() if date_div else 'Дата отсутствует'
+        for article in soup.find_all('div', class_='news-item'):
+            date_element = article.find('div', class_='date')
+            date_text = date_element.text.strip() if date_element else 'Дата отсутствует'
 
-            title = article.find('div', class_='text-block-27')
-            title_text = title.text.strip() if title else 'Нет заголовка'
+            title_element = article.find('div', class_='title')
+            title_text = title_element.text.strip() if title_element else 'Нет заголовка'
 
-            source = article.find('div', class_='text-block-28')
-            source_text = source.text.strip() if source else 'Нет источника'
+            source_element = article.find('div', class_='source')
+            source_text = source_element.text.strip() if source_element else 'Нет источника'
 
-            image = article.find('img')
-            image_url = image['src'] if image and 'src' in image.attrs else 'URL изображения отсутствует'
+            image_element = article.find('img', class_='thumbnail')
+            image_url = image_element['src'] if image_element and 'src' in image_element.attrs else 'URL изображения отсутствует'
 
-            news_url = article['href'] if 'href' in article.attrs else 'URL новости отсутствует'
+            news_url_element = article.find('a', class_='news-link')
+            news_url = news_url_element['href'] if news_url_element and 'href' in news_url_element.attrs else 'URL новости отсутствует'
 
             articles.append({
                 'date': date_text,
