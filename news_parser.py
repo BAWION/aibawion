@@ -9,10 +9,18 @@ def parse_news(url):
     try:
         logger.info(f"Запрос к URL: {url}")
         response = requests.get(url)
-        soup = BeautifulSoup(response.content, 'html.parser')
 
-        # Распечатать содержимое soup для отладки
-        print(soup.prettify())
+        # Проверка статуса ответа
+        if response.status_code != 200:
+            logger.error(f"Ошибка запроса: статус {response.status_code}")
+            return []
+
+        # Проверка MIME-типа содержимого
+        if 'html' not in response.headers['Content-Type']:
+            logger.error("Ошибка: Не HTML содержимое")
+            return []
+
+        soup = BeautifulSoup(response.content, 'html.parser')
 
         articles = []
         for article in soup.find_all('div', class_='news-item'):
