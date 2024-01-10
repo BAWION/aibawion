@@ -8,6 +8,7 @@ import pytz
 import requests
 from bs4 import BeautifulSoup
 import openai
+from translator import translate_text
 
 # Настройка логирования
 logging.basicConfig(
