@@ -118,8 +118,9 @@ def is_new_article(article_date, last_published_article_file):
 def update_last_published_article(article_date, last_published_article_file):
     try:
         with open(last_published_article_file, 'w') as file:
+            logger.info(f"Обновление файла {last_published_article_file} с датой {article_date.strftime('%B %d, %Y')}")
             file.write(article_date.strftime('%B %d, %Y'))
-        logger.info(f"Обновлена дата последней новости: {article_date.strftime('%B %d, %Y')}")
+            logger.info(f"Файл {last_published_article_file} обновлен с датой {article_date.strftime('%B %d, %Y')}")
     except Exception as e:
         logger.error(f"Ошибка при обновлении файла {last_published_article_file}: {e}")
 
