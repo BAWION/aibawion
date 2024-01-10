@@ -9,27 +9,29 @@ def parse_news(url):
     try:
         logger.info(f"Запрос к URL: {url}")
         response = requests.get(url)
+        response.raise_for_status()  # Убедитесь, что запрос прошел успешно
         soup = BeautifulSoup(response.content, 'html.parser')
 
         articles = []
-        for item in soup.find_all("div", class_="w-dyn-item"):
-            # Парсинг даты
-            date_element = item.find("div", class_="text-block-30")
-            date_text = date_element.text.strip() if date_element else 'Дата отсутствует'
+        for article in soup.find_all('div', class_='collection-item-6'):
+            # Найти дату новости
+            date_div = article.find('div', class_='text-block-30')
+            date_text = date_div.text.strip() if date_div else 'Дата отсутствует'
 
-            # Парсинг заголовка и URL новости
-            link_element = item.find("a", class_="link-block-8")
-            title_element = link_element.find("div", class_="text-block-27")
-            title_text = title_element.text.strip() if title_element else 'Нет заголовка'
-            news_url = link_element['href'] if link_element and 'href' in link_element.attrs else 'URL новости отсутствует'
+            # Найти заголовок новости
+            title_div = article.find('div', class_='text-block-27')
+            title_text = title_div.text.strip() if title_div else 'Нет заголовка'
 
-            # Парсинг источника
-            source_element = item.find("div", class_="text-block-28")
-            source_text = source_element.text.strip() if source_element else 'Нет источника'
+            # Найти домен источника новости
+            source_div = article.find('div', class_='text-block-28')
+            source_text = source_div.text.strip() if source_div else 'Нет источника'
 
-            # Парсинг URL изображения
-            image_element = item.find("img")
-            image_url = image_element['src'] if image_element and 'src' in image_element.attrs else 'URL изображения отсутствует'
+            # Найти URL изображения
+            image = article.find('img')
+            image_url = image['src'] if image and 'src' in image.attrs else 'URL изображения отсутствует'
+
+            # Собрать URL новости
+            news_url = article.a['href'] if article.a and 'href' in article.a.attrs else 'URL новости отсутствует'
 
             articles.append({
                 'date': date_text,
@@ -39,12 +41,7 @@ def parse_news(url):
                 'news_url': news_url
             })
 
-        if not articles:
-            logger.info("Не найдено новостей на странице")
-        else:
-            logger.info(f"Найдено {len(articles)} новостей")
-
-        logger.info("Парсинг завершен успешно")
+        logger.info(f"Найдено {len(articles)} новостей")
         return articles
     except Exception as e:
         logger.error(f"Ошибка при парсинге: {e}")
