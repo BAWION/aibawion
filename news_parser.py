@@ -11,6 +11,9 @@ def parse_news(url):
         response = requests.get(url)
         soup = BeautifulSoup(response.content, 'html.parser')
 
+        # Распечатать содержимое soup для отладки
+        print(soup.prettify())
+
         articles = []
         for article in soup.find_all('div', class_='news-item'):
             date_element = article.find('div', class_='date')
