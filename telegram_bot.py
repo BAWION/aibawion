@@ -23,6 +23,8 @@ def is_new_article(article_date, last_published_article_file):
         with open(last_published_article_file, 'r') as file:
             last_published_date_str = file.read().strip()
             last_published_date = datetime.strptime(last_published_date_str, '%B %d, %Y') if last_published_date_str else datetime.min
+        logger.info(f"Последняя опубликованная дата: {last_published_date}")
+        logger.info(f"Дата статьи: {article_date}")
         return article_date > last_published_date
     except Exception as e:
         logger.error(f"Ошибка при чтении файла {last_published_article_file}: {e}")
