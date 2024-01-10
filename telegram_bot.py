@@ -27,6 +27,12 @@ def parse_news(url):
         response = requests.get(url)
         response.raise_for_status()
         soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # Распечатать содержимое soup для отладки
+        print(soup.prettify())
+        
+        articles = []
+        for article in soup.find_all('div', class_='news-item'):
         # Здесь должен быть код для извлечения информации о новостях из сайта
         # Возвращаем список словарей с данными о новостях
         return []
