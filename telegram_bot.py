@@ -5,9 +5,9 @@ from functools import partial
 from telegram.ext import Updater, CommandHandler, CallbackContext
 from apscheduler.schedulers.background import BackgroundScheduler
 import pytz
-
-from news_parser import parse_news
-from translator import translate_text
+import requests
+from bs4 import BeautifulSoup
+import openai
 
 # Настройка логирования
 logging.basicConfig(
@@ -18,26 +18,36 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def is_new_article(article_date, last_published_article_file):
-    try:
-        with open(last_published_article_file, 'r') as file:
-            last_published_date_str = file.read().strip()
-            last_published_date = datetime.strptime(last_published_date_str, '%B %d, %Y') if last_published_date_str else datetime.min
-        logger.info(f"Последняя опубликованная дата: {last_published_date}")
-        logger.info(f"Дата статьи: {article_date}")
-        return article_date > last_published_date
-    except Exception as e:
-        logger.error(f"Ошибка при чтении файла {last_published_article_file}: {e}")
-        return False
+# Установка ключа API для OpenAI из переменной окружения
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
-def update_last_published_article(article_date, last_published_article_file):
+# Функция для парсинга новостей
+def parse_news(url):
     try:
-        with open(last_published_article_file, 'w') as file:
-            file.write(article_date.strftime('%B %d, %Y'))
-        logger.info(f"Обновлена дата последней новости: {article_date.strftime('%B %d, %Y')}")
+        response = requests.get(url)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, 'html.parser')
+        # Здесь должен быть код для извлечения информации о новостях из сайта
+        # Возвращаем список словарей с данными о новостях
+        return []
     except Exception as e:
-        logger.error(f"Ошибка при обновлении файла {last_published_article_file}: {e}")
+        logger.error(f"Ошибка при парсинге новостей: {str(e)}")
+        return []
 
+# Функция для отправки запроса на генерацию комментария от эксперта
+def generate_expert_commentary(news_text):
+    try:
+        response = openai.Completion.create(
+            engine="text-davinci-002",
+            prompt=f"Экспертный комментарий\n\n{news_text}\n\nКомментарий:",
+            max_tokens=100
+        )
+        return response.choices[0].text.strip()
+    except Exception as e:
+        logger.error(f"Ошибка при генерации экспертного комментария: {str(e)}")
+        return "Произошла ошибка при генерации комментария."
+
+# Функция для отправки новости и комментария в Telegram
 def send_news(context: CallbackContext):
     try:
         channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@your_default_channel_name')
@@ -59,9 +69,14 @@ def send_news(context: CallbackContext):
                 source = article['source']
                 news_url = article['news_url']
                 image_url = article['image_url']
-
-                message = f"{title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
+                news_text = f"{title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
                 logger.info(f"Обнаружена новая статья для отправки: {title}")
+
+                expert_commentary = generate_expert_commentary(news_text)
+                if expert_commentary:
+                    message = f"{news_text}\n\nЭкспертный комментарий:\n{expert_commentary}"
+                else:
+                    message = news_text
 
                 try:
                     context.bot.send_message(chat_id=channel_name, text=message, parse_mode='Markdown')
@@ -80,9 +95,33 @@ def send_news(context: CallbackContext):
     except Exception as e:
         logger.error(f"Произошла ошибка при отправке новостей: {str(e)}")
 
+# Функция для проверки, является ли статья новой
+def is_new_article(article_date, last_published_article_file):
+    try:
+        with open(last_published_article_file, 'r') as file:
+            last_published_date_str = file.read().strip()
+            last_published_date = datetime.strptime(last_published_date_str, '%B %d, %Y') if last_published_date_str else datetime.min
+        logger.info(f"Последняя опубликованная дата: {last_published_date}")
+        logger.info(f"Дата статьи: {article_date}")
+        return article_date > last_published_date
+    except Exception as e:
+        logger.error(f"Ошибка при чтении файла {last_published_article_file}: {e}")
+        return False
+
+# Функция для обновления даты последней опубликованной статьи
+def update_last_published_article(article_date, last_published_article_file):
+    try:
+        with open(last_published_article_file, 'w') as file:
+            file.write(article_date.strftime('%B %d, %Y'))
+        logger.info(f"Обновлена дата последней новости: {article_date.strftime('%B %d, %Y')}")
+    except Exception as e:
+        logger.error(f"Ошибка при обновлении файла {last_published_article_file}: {e}")
+
+# Функция для ручной отправки новостей
 def manual_send_news(update, context: CallbackContext):
     send_news(context)
 
+# Функция для запуска бота
 def main():
     try:
         token = os.getenv('TELEGRAM_BOT_TOKEN')
