@@ -24,17 +24,44 @@ openai.api_key = os.getenv('OPENAI_API_KEY')
 # Функция для парсинга новостей
 def parse_news(url):
     try:
+        logger.info(f"Запрос к URL: {url}")
         response = requests.get(url)
-        response.raise_for_status()
+        response.raise_for_status()  # Убедитесь, что запрос прошел успешно
         soup = BeautifulSoup(response.content, 'html.parser')
-        
+
         articles = []
-        for article in soup.find_all('div', class_='news-item'):
-            # Здесь должен быть код для извлечения информации о новостях из сайта
-            # Возвращаем список словарей с данными о новостях
-            return []
+        for article in soup.find_all('div', class_='collection-item-6'):
+            # Найти дату новости
+            date_div = article.find('div', class_='text-block-30')
+            date_text = date_div.text.strip() if date_div else 'Дата отсутствует'
+
+            # Найти заголовок новости
+            title_div = article.find('div', class_='text-block-27')
+            title_text = title_div.text.strip() if title_div else 'Нет заголовка'
+
+            # Найти домен источника новости
+            source_div = article.find('div', class_='text-block-28')
+            source_text = source_div.text.strip() if source_div else 'Нет источника'
+
+            # Найти URL изображения
+            image = article.find('img')
+            image_url = image['src'] if image and 'src' in image.attrs else 'URL изображения отсутствует'
+
+            # Собрать URL новости
+            news_url = article.a['href'] if article.a and 'href' in article.a.attrs else 'URL новости отсутствует'
+
+            articles.append({
+                'date': date_text,
+                'title': title_text,
+                'source': source_text,
+                'image_url': image_url,
+                'news_url': news_url
+            })
+
+        logger.info(f"Найдено {len(articles)} новостей")
+        return articles
     except Exception as e:
-        logger.error(f"Ошибка при парсинге новостей: {str(e)}")
+        logger.error(f"Ошибка при парсинге: {e}")
         return []
 
 
