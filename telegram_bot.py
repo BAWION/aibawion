@@ -7,8 +7,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import pytz
 import requests
 from bs4 import BeautifulSoup
-import openai
-from translator import translate_text  # Импортируем функцию для перевода текста
+from openai import OpenAI
+from translator import translate_text
 
 # Настройка логирования
 logging.basicConfig(
@@ -20,7 +20,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Установка ключа API для OpenAI из переменной окружения
-openai.api_key = os.getenv('OPENAI_API_KEY')
+openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 # Функция для парсинга новостей
 def parse_news(url):
@@ -69,9 +69,7 @@ def parse_news(url):
 # Функция для отправки запроса на генерацию комментария от эксперта
 def generate_expert_commentary(news_text):
     try:
-        openai.api_key = os.getenv('OPENAI_API_KEY')
-
-        response = openai.Completion.create(
+        response = openai_client.Completion.create(
             model="text-davinci-002",
             prompt=f"Экспертный комментарий\n\n{news_text}\n\nКомментарий:",
             max_tokens=100
