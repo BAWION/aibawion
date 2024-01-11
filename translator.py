@@ -3,18 +3,17 @@ import os
 
 def translate_text(text, target_language='en'):
     try:
-        # Убедитесь, что API ключ для OpenAI установлен в переменных окружения
+        # Ensure the OpenAI API key is set in environment variables
         openai.api_key = os.getenv('OPENAI_API_KEY')
 
-        response = openai.ChatCompletion.create(
+        # Using the correct method for text completion
+        response = openai.Completion.create(
             model="text-davinci-002",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": f"Translate the following text to {target_language}: {text}"}
-            ]
+            prompt=f"Translate the following text to {target_language}: {text}",
+            max_tokens=50  # Specify the maximum number of tokens for the translation
         )
-        translation = response['choices'][0]['message']['content']
+        translation = response.choices[0].text.strip()
         return translation
     except Exception as e:
-        print(f"Ошибка при переводе текста: {str(e)}")
+        print(f"Error in text translation: {str(e)}")
         return text
