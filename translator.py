@@ -1,7 +1,5 @@
 import openai
 
-# Установите ваш API ключ
-openai.api_key = 'YOUR_API_KEY'
 
 def translate_text(text, target_language='en'):
     try:
