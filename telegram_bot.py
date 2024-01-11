@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 # Установка ключа API для OpenAI из переменной окружения
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
+# Использование функции translate_text
+translated_text = translate_text(api_key, original_text, target_language)
+
 # Функция для парсинга новостей
 def parse_news(url):
     try:
