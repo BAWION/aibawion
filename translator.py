@@ -1,13 +1,16 @@
 import openai
-
+import os
 
 def translate_text(text, target_language='en'):
     try:
+        # Убедитесь, что API ключ для OpenAI установлен в переменных окружения
+        openai.api_key = os.getenv('OPENAI_API_KEY')
+
         response = openai.Completion.create(
             engine="text-davinci-002",
             prompt=f"Translate the following text to {target_language}: {text}",
-            max_tokens=50)  
-        
+            max_tokens=50  # Укажите максимальное количество токенов для перевода
+        )
         translation = response.choices[0].text.strip()
         return translation
     except Exception as e:
