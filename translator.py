@@ -1,4 +1,5 @@
 import openai
+import os
 
 def translate_text(text, target_language='en'):
     try:
