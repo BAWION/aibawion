@@ -71,15 +71,12 @@ def generate_expert_commentary(news_text):
     try:
         openai.api_key = os.getenv('OPENAI_API_KEY')
 
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": f"Provide an expert commentary on the following news: {news_text}"}
-            ]
+        response = openai.Completion.create(
+            model="text-davinci-002",
+            prompt=f"Экспертный комментарий\n\n{news_text}\n\nКомментарий:",
+            max_tokens=100
         )
-        commentary = response['choices'][0]['message']['content']
-        return commentary
+        return response.choices[0].text.strip()
     except Exception as e:
         print(f"Ошибка при генерации экспертного комментария: {str(e)}")
         return "Произошла ошибка при генерации комментария."
