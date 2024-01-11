@@ -9,7 +9,7 @@ def translate_text(text, target_language='en'):
             engine="text-davinci-002",
             prompt=f"Translate the following text to {target_language}: {text}",
             max_tokens=50  # Укажите максимальное количество токенов для перевода
-        )  # Возможно, здесь была пропущена закрывающая скобка
+        )  # Закрывающая скобка добавлена здесь
         translation = response.choices[0].text.strip()
         return translation
     except Exception as e:
