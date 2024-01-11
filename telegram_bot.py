@@ -8,7 +8,7 @@ import pytz
 import requests
 from bs4 import BeautifulSoup
 import openai
-from translator import translate_text
+from translator import translate_text  # Импортируем функцию для перевода текста
 
 # Настройка логирования
 logging.basicConfig(
@@ -21,9 +21,6 @@ logger = logging.getLogger(__name__)
 
 # Установка ключа API для OpenAI из переменной окружения
 openai.api_key = os.getenv('OPENAI_API_KEY')
-
-# Использование функции translate_text
-translated_text = translate_text(api_key, original_text, target_language)
 
 # Функция для парсинга новостей
 def parse_news(url):
@@ -100,12 +97,19 @@ def send_news(context: CallbackContext):
         for article in articles:
             article_date = datetime.strptime(article['date'], '%B %d, %Y')
             if is_new_article(article_date, last_published_article_file):
-                title = translate_text(article['title'])
+                original_title = article['title']
+                target_language = 'en'  # Или любой другой язык, на который вы хотите перевести
+
+                # Переводим заголовок статьи
+                translated_title = translate_text(original_title, target_language)
+
                 source = article['source']
                 news_url = article['news_url']
                 image_url = article['image_url']
-                news_text = f"{title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
-                logger.info(f"Обнаружена новая статья для отправки: {title}")
+
+                # Строим текст новости с использованием переведенного заголовка
+                news_text = f"{translated_title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
+                logger.info(f"Обнаружена новая статья для отправки: {translated_title}")
 
                 expert_commentary = generate_expert_commentary(news_text)
                 if expert_commentary:
@@ -115,10 +119,10 @@ def send_news(context: CallbackContext):
 
                 try:
                     context.bot.send_message(chat_id=channel_name, text=message, parse_mode='Markdown')
-                    logger.info(f"Новость отправлена: {title}")
+                    logger.info(f"Новость отправлена: {translated_title}")
                     latest_article_date = max(latest_article_date, article_date)
                 except Exception as e:
-                    logger.error(f"Ошибка при отправке новости {title}: {e}")
+                    logger.error(f"Ошибка при отправке новости {translated_title}: {e}")
             else:
                 logger.info("Статья не прошла проверку is_new_article и не будет отправлена.")
 
