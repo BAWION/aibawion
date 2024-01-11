@@ -69,15 +69,21 @@ def parse_news(url):
 # Функция для отправки запроса на генерацию комментария от эксперта
 def generate_expert_commentary(news_text):
     try:
-        response = openai.Completion.create(
-            engine="text-davinci-002",
-            prompt=f"Экспертный комментарий\n\n{news_text}\n\nКомментарий:",
-            max_tokens=100
+        openai.api_key = os.getenv('OPENAI_API_KEY')
+
+        response = openai.ChatCompletion.create(
+            model="text-davinci-002",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": f"Provide an expert commentary on the following news: {news_text}"}
+            ]
         )
-        return response.choices[0].text.strip()
+        commentary = response['choices'][0]['message']['content']
+        return commentary
     except Exception as e:
-        logger.error(f"Ошибка при генерации экспертного комментария: {str(e)}")
+        print(f"Ошибка при генерации экспертного комментария: {str(e)}")
         return "Произошла ошибка при генерации комментария."
+
 
 # Функция для отправки новости и комментария в Telegram
 def send_news(context: CallbackContext):
