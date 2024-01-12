@@ -1,4 +1,5 @@
 import os
+import openai
 import logging
 from datetime import datetime
 from functools import partial
@@ -7,7 +8,6 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import pytz
 import requests
 from bs4 import BeautifulSoup
-from openai import OpenAI
 from translator import translate_text
 
 # Настройка логирования
@@ -20,7 +20,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Установка ключа API для OpenAI из переменной окружения
-openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
 # Функция для парсинга новостей
 def parse_news(url):
@@ -69,8 +69,8 @@ def parse_news(url):
 # Функция для отправки запроса на генерацию комментария от эксперта
 def generate_expert_commentary(news_text):
     try:
-        response = openai_client.Completion.create(
-            model="text-davinci-002",
+        response = openai.Completion.create(
+            engine="text-davinci-003",
             prompt=f"Экспертный комментарий\n\n{news_text}\n\nКомментарий:",
             max_tokens=100
         )
