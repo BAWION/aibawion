@@ -163,11 +163,10 @@ def manual_send_news(update, context: CallbackContext):
     send_news(context)
 
 # Функция для запуска бота
-# Функция для запуска бота
 def main():
     try:
         token = os.getenv('TELEGRAM_BOT_TOKEN')
-        updater = Updater(token)  # Изменено здесь
+        updater = Updater(token, use_context=True)
 
         dp = updater.dispatcher
         dp.add_handler(CommandHandler('sendnews', manual_send_news))
