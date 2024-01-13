@@ -6,7 +6,7 @@ def translate_text(text, target_language='ru'):
         openai.api_key = os.getenv('OPENAI_API_KEY')
 
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # Новая модель, замените на актуальную, если доступна другая
+            model="gpt-3.5-turbo",  # Используйте подходящую модель
             messages=[
                 {"role": "system", "content": "You are a highly skilled translator."},
                 {"role": "user", "content": f"Translate the following text to {target_language}: {text}"}
