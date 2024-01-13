@@ -1,19 +1,21 @@
 import openai
-
-# Установите ваш API ключ от OpenAI
-openai.api_key = 'ВАШ_API_КЛЮЧ'
+import os
 
 def test_translation():
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a highly skilled translator."},
-                {"role": "user", "content": "Translate 'Hello, world!' to Russian."}
-            ]
+        openai.api_key = os.getenv('OPENAI_API_KEY')
+
+        response = openai.Completion.create(
+            model="text-davinci-003",
+            prompt="Translate 'Hello, world!' to Russian.",
+            max_tokens=60,
+            temperature=0.7,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0
         )
-        translation = response['choices'][0]['message']['content']
-        return translation.strip()
+        translation = response.choices[0].text.strip()
+        return translation
     except Exception as e:
         print(f"Error: {str(e)}")
         return None
