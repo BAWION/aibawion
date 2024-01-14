@@ -6,8 +6,8 @@ def test_openai_connection():
         openai.api_key = os.getenv('OPENAI_API_KEY')
 
         # Используйте модель gpt-3.5-turbo с конечной точкой для чата
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # Используйте модель gpt-3.5-turbo
+        response = openai.Completion.create(
+            engine="gpt-3.5-turbo",  # Используйте модель gpt-3.5-turbo
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": "Hello, world!"}
