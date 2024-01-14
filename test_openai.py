@@ -5,15 +5,13 @@ def test_openai_connection():
     try:
         openai.api_key = os.getenv('OPENAI_API_KEY')
 
-        # Используйте модель gpt-3.5-turbo с конечной точкой для чата
+        # Используйте модель gpt-3.5-turbo-0613
         response = openai.Completion.create(
-            engine="gpt-3.5-turbo",  # Используйте модель gpt-3.5-turbo
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": "Hello, world!"}
-            ]
+            engine="gpt-3.5-turbo-0613",  # Используйте модель gpt-3.5-turbo-0613
+            prompt="Hello, world!",
+            max_tokens=5
         )
-        print(response.choices[0].message['content'].strip())
+        print(response.choices[0].text.strip())
     except Exception as e:
         print(f"Ошибка: {e}")
 
