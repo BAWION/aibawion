@@ -5,9 +5,9 @@ def test_openai_connection():
     try:
         openai.api_key = os.getenv('OPENAI_API_KEY')
 
-        # Используйте модель davinci-002
+        # Используйте модель text-davinci-003
         response = openai.Completion.create(
-            engine="davinci-002",
+            engine="text-davinci-003",
             prompt="Hello, world!",
             max_tokens=5
         )
@@ -17,4 +17,3 @@ def test_openai_connection():
 
 if __name__ == "__main__":
     test_openai_connection()
-
