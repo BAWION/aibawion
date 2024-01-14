@@ -1,4 +1,5 @@
 import openai
+import os
 
 def test_openai_connection():
     try:
