@@ -5,9 +5,9 @@ def test_openai_connection():
     try:
         openai.api_key = os.getenv('OPENAI_API_KEY')
 
-        # Используйте модель gpt-3.5-turbo-0613 с конечной точкой для текстовой генерации
+        # Используйте модель GPT-4 с конечной точкой для текстовой генерации
         response = openai.Completion.create(
-            engine="gpt-3.5-turbo-0613",  # Используйте модель gpt-3.5-turbo-0613
+            engine="gpt-4",  # Замените на имя модели GPT-4
             prompt="Hello, world!",
             max_tokens=5
         )
@@ -17,4 +17,3 @@ def test_openai_connection():
 
 if __name__ == "__main__":
     test_openai_connection()
-
