@@ -72,9 +72,9 @@ def generate_expert_commentary(news_text):
         # Убедитесь, что ключ API OpenAI установлен в переменных окружения
         openai.api_key = os.getenv('OPENAI_API_KEY')
 
-        # Используйте модель gpt-4 для генерации комментария
+        # Используйте модель davinci-002 для генерации комментария
         response = openai.Completion.create(
-            engine="gpt-4",  # Используйте модель gpt-4
+            engine="davinci-002",  # Используйте модель davinci-002
             prompt=f"Экспертный комментарий\n\n{news_text}\n\nКомментарий:",
             max_tokens=100
         )
