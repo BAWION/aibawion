@@ -5,9 +5,9 @@ def test_openai_connection():
     try:
         openai.api_key = os.getenv('OPENAI_API_KEY')
 
-        # Используйте актуальное название модели
+        # Используйте модель gpt-3.5-turbo
         response = openai.Completion.create(
-            engine="gpt-4.0-turbo",  # Замените на актуальную модель
+            engine="gpt-3.5-turbo",
             prompt="Hello, world!",
             max_tokens=5
         )
