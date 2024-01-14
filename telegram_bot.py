@@ -170,7 +170,11 @@ def manual_send_news(update, context: CallbackContext):
 def main():
     try:
         token = os.getenv('TELEGRAM_BOT_TOKEN')
-        updater = Updater(token, use_context=True)
+        if not token:
+            logger.error("Токен Telegram BOT не найден. Проверьте переменные окружения.")
+            return
+
+        updater = Updater(token)
 
         dp = updater.dispatcher
         dp.add_handler(CommandHandler('sendnews', manual_send_news))
@@ -188,4 +192,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
