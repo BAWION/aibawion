@@ -6,7 +6,7 @@ def test_translation():
         openai.api_key = os.getenv('OPENAI_API_KEY')
 
         response = openai.Completion.create(
-            model="text-davinci-004",  # Используйте модель text-davinci-004
+            model="gpt-4.0-turbo",  # Используйте модель gpt-4.0-turbo
             prompt="Translate 'Hello, world!' to Russian.",
             max_tokens=60,
             temperature=0.7
