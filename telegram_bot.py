@@ -66,11 +66,12 @@ def parse_news(url):
         return []
 
 
-def generate_expert_commentary(news_title):
+def generate_expert_commentary(news_title, news_content):
     try:
         openai.api_key = os.getenv('OPENAI_API_KEY')
 
-        prompt = f"Напишите краткий экспертный комментарий на русском языке к новости с заголовком '{news_title}'. Комментарий должен содержать анализ значимости этой новости и её потенциальное влияние на рынок."
+        prompt = (f"Напишите краткий экспертный комментарий на русском языке к новости с заголовком '{news_title}'. "
+                  f"Текст новости: {news_content}\n\nКомментарий:")
 
         response = openai.Completion.create(
             engine="davinci-002",
