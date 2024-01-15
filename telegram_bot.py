@@ -66,19 +66,16 @@ def parse_news(url):
         return []
 
 
-def generate_expert_commentary(news_title, news_summary):
+def generate_expert_commentary(news_title):
     try:
         openai.api_key = os.getenv('OPENAI_API_KEY')
 
-        # Формулирование запроса с учетом новых требований
-        prompt = (f"Представьте, что вы эксперт в области технологий. Напишите краткий комментарий на русском языке к новости с заголовком '{news_title}'. "
-                  f"Ваш комментарий должен содержать анализ значимости этой новости, ожидаемых инноваций, а также потенциального влияния на рынок и конкурентов. "
-                  f"Краткое содержание новости: {news_summary}\n\nКомментарий:")
+        prompt = f"Напишите краткий экспертный комментарий на русском языке к новости с заголовком '{news_title}'. Комментарий должен содержать анализ значимости этой новости и её потенциальное влияние на рынок."
 
         response = openai.Completion.create(
             engine="davinci-002",
             prompt=prompt,
-            max_tokens=150  # Увеличиваем количество токенов для более полного ответа
+            max_tokens=150
         )
         return response.choices[0].text.strip()
     except Exception as e:
