@@ -66,12 +66,11 @@ def parse_news(url):
         return []
 
 
-def generate_expert_commentary(news_title, news_content):
+def generate_expert_commentary(news_title):
     try:
         openai.api_key = os.getenv('OPENAI_API_KEY')
 
-        prompt = (f"Напишите краткий экспертный комментарий на русском языке к новости с заголовком '{news_title}'. "
-                  f"Текст новости: {news_content}\n\nКомментарий:")
+        prompt = f"Напишите краткий экспертный комментарий на русском языке к новости с заголовком '{news_title}'."
 
         response = openai.Completion.create(
             engine="davinci-002",
@@ -84,7 +83,7 @@ def generate_expert_commentary(news_title, news_content):
         return "Произошла ошибка при генерации комментария."
 
 
-# Функция для отправки новости и комментария в Telegram
+# Функция для отправки новостей и комментариев в Telegram
 def send_news(context: CallbackContext):
     try:
         channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@your_default_channel_name')
@@ -103,20 +102,18 @@ def send_news(context: CallbackContext):
             article_date = datetime.strptime(article['date'], '%B %d, %Y')
             if is_new_article(article_date, last_published_article_file):
                 original_title = article['title']
-                target_language = 'en'  # Или любой другой язык, на который вы хотите перевести
+                target_language = 'ru'  # Устанавливаем русский язык как целевой для перевода
 
-                # Переводим заголовок статьи
                 translated_title = translate_text(original_title, target_language)
 
                 source = article['source']
                 news_url = article['news_url']
                 image_url = article['image_url']
 
-                # Строим текст новости с использованием переведенного заголовка
                 news_text = f"{translated_title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
                 logger.info(f"Обнаружена новая статья для отправки: {translated_title}")
 
-                expert_commentary = generate_expert_commentary(news_text)
+                expert_commentary = generate_expert_commentary(translated_title)  # Используем переведенный заголовок
                 if expert_commentary:
                     message = f"{news_text}\n\nЭкспертный комментарий:\n{expert_commentary}"
                 else:
@@ -138,6 +135,7 @@ def send_news(context: CallbackContext):
         logger.info("Завершение отправки новостей")
     except Exception as e:
         logger.error(f"Произошла ошибка при отправке новостей: {str(e)}")
+
 
 # Функция для проверки, является ли статья новой
 def is_new_article(article_date, last_published_article_file):
