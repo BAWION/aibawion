@@ -111,7 +111,7 @@ def publish_news(update, context):
   del context.user_data['comment']
   
 # Функция для отправки новостей и комментариев в Telegram
-def send_news(context: CallbackContext, job):
+def send_news(context: CallbackContext):
     try:
         channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@your_default_channel_name')
         logger.info(f"Начало отправки новостей в канал {channel_name}")
