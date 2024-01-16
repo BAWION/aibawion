@@ -110,15 +110,86 @@ def publish_news(update, context):
   del context.user_data['current_article'] 
   del context.user_data['comment']
   
-# Функции для отправки новостей и проверки новых статей  
+# Функция для отправки новостей и комментариев в Telegram
 def send_news(context: CallbackContext):
-  # Ваш код для отправки новостей
-  
+    try:
+        channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@your_default_channel_name')
+        logger.info(f"Начало отправки новостей в канал {channel_name}")
+        url = 'https://www.futuretools.io/news'
+        articles = parse_news(url)
+
+        if not articles:
+            logger.info("Новостей для отправки нет.")
+            return
+
+        last_published_article_file = 'last_published_article.txt'
+        latest_article_date = datetime.min
+
+        for article in articles:
+            article_date = datetime.strptime(article['date'], '%B %d, %Y')
+            if is_new_article(article_date, last_published_article_file):
+                original_title = article['title']
+                target_language = 'ru'  # Устанавливаем русский язык как целевой для перевода
+
+                translated_title = translate_text_deepl(original_title, target_language)
+
+                source = article['source']
+                news_url = article['news_url']
+                image_url = article['image_url']
+
+                news_text = f"{translated_title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
+                logger.info(f"Обнаружена новая статья для отправки: {translated_title}")
+
+                expert_commentary = generate_expert_commentary(translated_title)  # Используем переведенный заголовок
+                if expert_commentary:
+                    message = f"{news_text}\n\nЭкспертный комментарий:\n{expert_commentary}"
+                else:
+                    message = news_text
+
+                try:
+                    context.bot.send_message(chat_id=channel_name, text=message, parse_mode='Markdown')
+                    logger.info(f"Новость отправлена: {translated_title}")
+                    latest_article_date = max(latest_article_date, article_date)
+                except Exception as e:
+                    logger.error(f"Ошибка при отправке новости {translated_title}: {e}")
+            else:
+                logger.info("Статья не прошла проверку is_new_article и не будет отправлена.")
+
+        if latest_article_date > datetime.min:
+            update_last_published_article(latest_article_date, last_published_article_file)
+            logger.info(f"Дата последней опубликованной новости обновлена: {latest_article_date.strftime('%B %d, %Y')}")
+
+        logger.info("Завершение отправки новостей")
+    except Exception as e:
+        logger.error(f"Произошла ошибка при отправке новостей: {str(e)}")
+
+
+# Функция для проверки, является ли статья новой
 def is_new_article(article_date, last_published_article_file):
-  # Ваш код для проверки новых статей
-  
+    try:
+        with open(last_published_article_file, 'r') as file:
+            last_published_date_str = file.read().strip()
+            last_published_date = datetime.strptime(last_published_date_str, '%B %d, %Y') if last_published_date_str else datetime.min
+        logger.info(f"Последняя опубликованная дата: {last_published_date}")
+        logger.info(f"Дата статьи: {article_date}")
+        return article_date > last_published_date
+    except Exception as e:
+        logger.error(f"Ошибка при чтении файла {last_published_article_file}: {e}")
+        return False
+
+# Функция для обновления даты последней опубликованной статьи
 def update_last_published_article(article_date, last_published_article_file):
-  # Ваш код для обновления последней статьи
+    try:
+        with open(last_published_article_file, 'w') as file:
+            logger.info(f"Обновление файла {last_published_article_file} с датой {article_date.strftime('%B %d, %Y')}")
+            file.write(article_date.strftime('%B %d, %Y'))
+            logger.info(f"Файл {last_published_article_file} обновлен с датой {article_date.strftime('%B %d, %Y')}")
+    except Exception as e:
+        logger.error(f"Ошибка при обновлении файла {last_published_article_file}: {e}")
+
+# Функция для ручной отправки новостей
+def manual_send_news(update, context: CallbackContext):
+    send_news(context)
 
 # Функция main
 def main():
