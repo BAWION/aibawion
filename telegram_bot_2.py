@@ -231,10 +231,16 @@ def main():
         updater = Updater(token)
         dp = updater.dispatcher
 
-        dp.add_handler(CommandHandler('sendnews', manual_send_news))
-        dp.add_handler(CommandHandler('addcomment', start_add_comment))
+        dp.add_handler(CommandHandler('sendnews', send_news))
         dp.add_handler(CommandHandler('publish', publish_news))
-        dp.add_handler(MessageHandler(Filters.text & ~Filters.command, add_comment))
+        dp.add_handler(ConversationHandler(
+            entry_points=[MessageHandler(Filters.text & ~Filters.command, start_add_comment)],
+            states={
+                SELECTING_NEWS: [MessageHandler(Filters.text & ~Filters.command, select_news)],
+                ADDING_COMMENT: [MessageHandler(Filters.text & ~Filters.command, add_comment)],
+            },
+            fallbacks=[],
+        ))
 
         # Настройка планировщика для регулярной отправки новостей
         scheduler = BackgroundScheduler(timezone=pytz.utc)
@@ -249,3 +255,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
