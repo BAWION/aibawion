@@ -1,38 +1,26 @@
-import openai
+import requests
 import os
-import logging
 
-# Настройка логирования
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+def translate_text_deepl(text, target_language='RU'):
+    api_key = os.getenv('DEEPL_API_KEY')
+    if not api_key:
+        raise ValueError("DeepL API ключ не найден. Убедитесь, что он задан в переменных окружения.")
 
-def translate_text(text, target_language='ru'):
-    try:
-        openai.api_key = os.getenv('OPENAI_API_KEY')
+    url = "https://api.deepl.com/v2/translate"
+    data = {
+        'auth_key': api_key,
+        'text': text,
+        'target_lang': target_language
+    }
 
-        prompt = f"Переведите этот новостной заголовок на {target_language} язык: {text}"
+    response = requests.post(url, data=data)
+    if response.status_code != 200:
+        raise Exception(f"Ошибка DeepL API: {response.status_code} {response.text}")
 
-        response = openai.Completion.create(
-            model="davinci-002",
-            prompt=prompt,
-            max_tokens=60
-        )
-        translation = response.choices[0].text.strip()
-
-        # Логирование ответа от API
-        logger.info(f"API request prompt: {prompt}")
-        logger.info(f"API response: {translation}")
-
-        return translation
-    except Exception as e:
-        logger.error(f"Error in text translation: {str(e)}")
-        return text
+    translated_text = response.json().get('translations', [{}])[0].get('text', '')
+    return translated_text
 
 if __name__ == "__main__":
     original_text = "Hello, world!"
-    translated_text = translate_text(original_text)
+    translated_text = translate_text_deepl(original_text)
     print(f"Translated text: {translated_text}")
-
