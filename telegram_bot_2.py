@@ -194,4 +194,4 @@ def main():
     dp.add_handler(CommandHandler('sendnews', manual_send_news))
 
     scheduler = BackgroundScheduler(timezone=pytz.utc)
-    job = partial(send_news, context=updater
+    job = partial(send_news, context=updater)
