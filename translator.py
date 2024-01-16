@@ -6,7 +6,8 @@ def translate_text_deepl(text, target_language='RU'):
     if not api_key:
         raise ValueError("DeepL API ключ не найден. Убедитесь, что он задан в переменных окружения.")
 
-    url = "https://api.deepl.com/v2/translate"
+    # Измененный URL для бесплатной версии DeepL API
+    url = "https://api-free.deepl.com/v2/translate"
     data = {
         'auth_key': api_key,
         'text': text,
