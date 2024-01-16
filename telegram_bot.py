@@ -8,7 +8,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import pytz
 import requests
 from bs4 import BeautifulSoup
-from translator import translate_text
+from translator import translate_text_deepl
 
 # Настройка логирования
 logging.basicConfig(
@@ -104,7 +104,7 @@ def send_news(context: CallbackContext):
                 original_title = article['title']
                 target_language = 'ru'  # Устанавливаем русский язык как целевой для перевода
 
-                translated_title = translate_text(original_title, target_language)
+                translated_title = translate_text_deepl(original_title, target_language)
 
                 source = article['source']
                 news_url = article['news_url']
