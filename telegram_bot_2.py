@@ -210,7 +210,7 @@ def main():
     # Настройка планировщика для регулярной отправки новостей    
     scheduler = BackgroundScheduler(timezone=pytz.utc)
     job = partial(send_news, context=updater.job_queue)
-    scheduler.add_job(job, 'interval', minutes=150)    
+    scheduler.add_job(job, 'interval', minutes=150, args=(updater.job_queue,))
     scheduler.start()
 
     updater.start_polling()
