@@ -220,7 +220,6 @@ def update_last_published_article(article_date, last_published_article_file):
     except Exception as e:
         logger.error(f"Ошибка при обновлении файла {last_published_article_file}: {e}")
 
-# Функция main
 def main():
     try:
         token = os.getenv('TELEGRAM_BOT_TOKEN')
@@ -231,18 +230,21 @@ def main():
         updater = Updater(token)
         dp = updater.dispatcher
 
+        dp.add_handler(CommandHandler('sendnews', send_news))
         dp.add_handler(CommandHandler('publish', publish_news))
-        conv_handler = ConversationHandler(
-            entry_points=[CommandHandler('addcomment', start_add_comment)],
+        dp.add_handler(ConversationHandler(
+            entry_points=[MessageHandler(Filters.text & ~Filters.command, start_add_comment)],
             states={
                 SELECTING_NEWS: [MessageHandler(Filters.text & ~Filters.command, select_news)],
                 ADDING_COMMENT: [MessageHandler(Filters.text & ~Filters.command, add_comment)],
             },
             fallbacks=[],
-        )
-        dp.add_handler(conv_handler)
+        ))
 
-        # Остальной код остается без изменений
+        # Настройка планировщика для регулярной отправки новостей
+        scheduler = BackgroundScheduler(timezone=pytz.utc)
+        scheduler.add_job(send_news, 'interval', minutes=150, args=[updater])
+        scheduler.start()
 
         updater.start_polling()
         updater.idle()
@@ -252,5 +254,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 
