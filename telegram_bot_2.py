@@ -1,8 +1,7 @@
 import os
-import openai
 import logging
 from datetime import datetime
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, CallbackContext
 from apscheduler.schedulers.background import BackgroundScheduler
 import pytz
 import requests
@@ -83,34 +82,86 @@ def generate_expert_commentary(news_title):
         print(f"Ошибка при генерации экспертного комментария: {str(e)}")
         return "Произошла ошибка при генерации комментария."
 
-# Функция для ручного добавления комментария к новости
+# Функция для начала добавления комментария к новости
+def start_add_comment(update, context):
+    update.message.reply_text("Выберите новость, к которой хотите добавить комментарий:")
+    news_list = context.user_data.get('news_list')
+    if not news_list:
+        update.message.reply_text("Ошибка: Список новостей пуст.")
+        return ConversationHandler.END
+
+    context.user_data['news_list'] = news_list
+    context.user_data['commented_news'] = {}
+    context.user_data['selected_news'] = None
+
+    news_choices = [f"{i + 1}. {news['title']}" for i, news in enumerate(news_list)]
+    update.message.reply_text("\n".join(news_choices))
+
+    return SELECTING_NEWS
+
+# Функция для выбора новости для добавления комментария
+def select_news(update, context):
+    selected_index = int(update.message.text.split(".")[0]) - 1
+    news_list = context.user_data['news_list']
+
+    if 0 <= selected_index < len(news_list):
+        selected_news = news_list[selected_index]
+        context.user_data['selected_news'] = selected_news
+        update.message.reply_text(f"Вы выбрали новость: {selected_news['title']}. Теперь введите ваш комментарий:")
+        return ADDING_COMMENT
+    else:
+        update.message.reply_text("Ошибка: Выбранная новость не найдена.")
+        return ConversationHandler.END
+
+# Функция для добавления комментария к выбранной новости
 def add_comment(update, context):
-    context.user_data['current_article'] = update.message.text
-    update.message.reply_text("Введите ваш экспертный комментарий:")
+    comment = update.message.text
+    selected_news = context.user_data['selected_news']
 
-# Функция для обработки введенного комментария
-def handle_comment(update, context):
-    user_comment = update.message.text
-    context.user_data['comment'] = user_comment
-    update.message.reply_text("Комментарий сохранен. Используйте команду /publish для публикации.")
+    if selected_news:
+        selected_news['comment'] = comment
+        commented_news = context.user_data.get('commented_news', {})
+        commented_news[selected_news['title']] = selected_news
+        context.user_data['commented_news'] = commented_news
 
-# Функция для публикации новости с комментарием в канале
+        update.message.reply_text("Комментарий сохранен. Вы можете продолжить добавлять комментарии или отправить /publish, чтобы опубликовать новости в канале.")
+    else:
+        update.message.reply_text("Ошибка: Новость не выбрана.")
+
+    return SELECTING_NEWS
+
+# Функция для публикации новостей с комментариями в канале
 def publish_news(update, context):
-    article_data = context.user_data.get('current_article')
-    comment = context.user_data.get('comment')
-    if not article_data or not comment:
-        update.message.reply_text("Ошибка: Не найдены данные статьи или комментарий для публикации.")
-        return
+    commented_news = context.user_data.get('commented_news', {})
 
-    message = f"{article_data}\n\nЭкспертный комментарий:\n{comment}"
-    context.bot.send_message(chat_id='@bawion', text=message, parse_mode='Markdown')
-    update.message.reply_text("Статья с комментарием опубликована.")
+    if not commented_news:
+        update.message.reply_text("Ошибка: Нет новостей с комментариями для публикации.")
+    else:
+        channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@your_default_channel_name')
+        logger.info(f"Начало отправки новостей в канал {channel_name}")
 
-    del context.user_data['current_article']
-    del context.user_data['comment']
+        for title, news in commented_news.items():
+            translated_title = translate_text_deepl(news['title'], 'ru')
+
+            source = news['source']
+            news_url = news['news_url']
+            image_url = news['image_url']
+            comment = news['comment']
+
+            news_text = f"{translated_title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
+            logger.info(f"Обнаружена новая статья для отправки: {translated_title}")
+
+            message = f"{news_text}\n\nЭкспертный комментарий:\n{comment}"
+            context.bot.send_message(chat_id=channel_name, text=message, parse_mode='Markdown')
+            logger.info(f"Новость отправлена: {translated_title}")
+
+        update.message.reply_text("Все новости с комментариями опубликованы.")
+
+    context.user_data.clear()
+    return ConversationHandler.END
 
 # Функция для отправки новостей и комментариев в Telegram
-def send_news():
+def send_news(context: CallbackContext):
     try:
         channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@your_default_channel_name')
         logger.info(f"Начало отправки новостей в канал {channel_name}")
@@ -187,7 +238,7 @@ def update_last_published_article(article_date, last_published_article_file):
 
 # Функция для ручной отправки новостей
 def manual_send_news(update, context: CallbackContext):
-    send_news()
+    send_news(context)
 
 # Функция main
 def main():
@@ -201,13 +252,13 @@ def main():
         dp = updater.dispatcher
 
         dp.add_handler(CommandHandler('sendnews', manual_send_news))
-        dp.add_handler(CommandHandler('addcomment', add_comment))
+        dp.add_handler(CommandHandler('addcomment', start_add_comment))
         dp.add_handler(CommandHandler('publish', publish_news))
-        dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_comment))
+        dp.add_handler(MessageHandler(Filters.text & ~Filters.command, add_comment))
 
         # Настройка планировщика для регулярной отправки новостей
         scheduler = BackgroundScheduler(timezone=pytz.utc)
-        scheduler.add_job(send_news, 'interval', minutes=150)
+        scheduler.add_job(send_news, 'interval', minutes=150, args=[updater])
         scheduler.start()
 
         updater.start_polling()
