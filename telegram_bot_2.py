@@ -66,23 +66,6 @@ def parse_news(url):
         logger.error(f"Ошибка при парсинге: {e}")
     return []
 
-# Функция для генерации экспертного комментария
-def generate_expert_commentary(news_title):
-    try:
-        openai.api_key = os.getenv('OPENAI_API_KEY')
-
-        prompt = f"Напишите краткий экспертный комментарий на русском языке к новости с заголовком '{news_title}'."
-
-        response = openai.Completion.create(
-            engine="davinci-002",
-            prompt=prompt,
-            max_tokens=150
-        )
-        return response.choices[0].text.strip()
-    except Exception as e:
-        print(f"Ошибка при генерации экспертного комментария: {str(e)}")
-        return "Произошла ошибка при генерации комментария."
-
 # Функция для начала добавления комментария к новости
 def start_add_comment(update, context):
     update.message.reply_text("Выберите новость, к которой хотите добавить комментарий:")
@@ -236,10 +219,6 @@ def update_last_published_article(article_date, last_published_article_file):
             logger.info(f"Файл {last_published_article_file} обновлен с датой {article_date.strftime('%B %d, %Y')}")
     except Exception as e:
         logger.error(f"Ошибка при обновлении файла {last_published_article_file}: {e}")
-
-# Функция для ручной отправки новостей
-def manual_send_news(update, context: CallbackContext):
-    send_news(context)
 
 # Функция main
 def main():
