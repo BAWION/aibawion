@@ -85,12 +85,8 @@ def main():
     updater = Updater(token, use_context=True)
     dp = updater.dispatcher
 
-    # Обработчик команды для начала добавления комментария к новости
-    dp.add_handler(CommandHandler('start', start_add_comment))
-    
-    # Обработчики для добавления комментария и публикации новости
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('comment', start_add_comment)],
+        entry_points=[CommandHandler('start', start_add_comment)],
         states={
             SELECTING_NEWS: [MessageHandler(Filters.text, select_news)],
             ADDING_COMMENT: [MessageHandler(Filters.text, add_comment)]
@@ -98,14 +94,8 @@ def main():
         fallbacks=[]
     )
     dp.add_handler(conv_handler)
-
-    # Обработчик команды для публикации новостей с комментариями в канале
     dp.add_handler(CommandHandler('publish', publish_news))
 
-    # Обработчик команды для отправки новостей в бот
-    dp.add_handler(CommandHandler('sendnews', send_news))
-
-    # Настройка планировщика для регулярной отправки новостей
     scheduler = BackgroundScheduler(timezone=pytz.utc)
     scheduler.add_job(send_news, 'interval', minutes=60, args=[updater])
     scheduler.start()
@@ -114,4 +104,4 @@ def main():
     updater.idle()
 
 if __name__ == '__main__':
-    main()
+    main())
