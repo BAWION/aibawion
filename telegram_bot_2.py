@@ -22,9 +22,6 @@ logger = logging.getLogger(__name__)
 SELECTING_NEWS, ADDING_COMMENT = range(2)
 news_to_comment = {}
 
-# Установка ключа API для OpenAI из переменной окружения
-openai.api_key = os.getenv('OPENAI_API_KEY')
-
 # Функция для парсинга новостей
 def parse_news(url):
     try:
@@ -98,11 +95,11 @@ def send_news(context: CallbackContext):
                 news_text = f"{translated_title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
                 logger.info(f"Обнаружена новая статья для отправки: {translated_title}")
 
-                expert_commentary = generate_expert_commentary(translated_title)  # Используем переведенный заголовок
-                if expert_commentary:
-                    message = f"{news_text}\n\nЭкспертный комментарий:\n{expert_commentary}"
-                else:
-                    message = news_text
+                # expert_commentary = generate_expert_commentary(translated_title)  # Используем переведенный заголовок
+                # if expert_commentary:
+                #     message = f"{news_text}\n\nЭкспертный комментарий:\n{expert_commentary}"
+                # else:
+                message = news_text
 
                 try:
                     context.bot.send_message(chat_id=channel_name, text=message, parse_mode='Markdown')
