@@ -66,13 +66,13 @@ def parse_news(url):
         return []
 
 # Функция для отправки новостей и комментариев в Telegram
-def send_news(context: CallbackContext):
+def send_news():
     try:
         channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@your_default_channel_name')
         logger.info(f"Начало отправки новостей в канал {channel_name}")
         url = 'https://www.futuretools.io/news'
         articles = parse_news(url)
-
+        
         if not articles:
             logger.info("Новостей для отправки нет.")
             return
