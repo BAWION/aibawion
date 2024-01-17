@@ -114,7 +114,7 @@ def send_news(context: CallbackContext):
                 logger.info(f"Обнаружена новая статья для отправки: {translated_title}")
 
                 # Оставляем место для экспертного комментария
-                message = f"{news_text}\n\nЭкспертный комментарий:\n<Ваш комментарий>"
+                message = f"{news_text}\n\nЭкспертное мнение:\n<Ваш комментарий>"
 
                 try:
                     context.bot.send_message(chat_id=channel_name, text=message, parse_mode='Markdown')
