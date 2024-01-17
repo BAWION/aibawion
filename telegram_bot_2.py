@@ -141,7 +141,7 @@ def publish_news(update, context):
     context.user_data.clear()
     return ConversationHandler.END
 
-# Функция для отправки новостей и комментариев в Telegram
+# Функция для отправки новостей в Telegram
 def send_news(context: CallbackContext):
     try:
         channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@channel_bawion_bot')
