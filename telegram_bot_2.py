@@ -2,7 +2,7 @@ import os
 import logging
 from datetime import datetime
 from functools import partial
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, CallbackContext, ReplyKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, CallbackContext
 from apscheduler.schedulers.background import BackgroundScheduler
 import pytz
 import requests
