@@ -121,13 +121,14 @@ def send_news():
 
 # Функция для обработки команды /start
 def start(update, context):
-    user_id = update.effective_user.id
+    user_id = update.message.from_user.id
     if user_id == YOUR_ADMIN_USER_ID:
-        update.message.reply_text("Привет! Вы вошли как администратор.")
-        return SELECTING_NEWS
+        context.bot.send_message(chat_id=user_id, text="Вы администратор бота.")
     else:
-        update.message.reply_text("Привет! Этот бот предназначен только для администратора.")
-        return ConversationHandler.END
+        context.bot.send_message(chat_id=user_id, text="Привет! Я бот для управления функциями.")
+
+dp.add_handler(CommandHandler("start", start))
+
 
 # Функция для выбора новости для комментирования
 def select_news(update, context):
