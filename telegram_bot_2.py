@@ -1,5 +1,5 @@
 import os
-import logging
+import logging 
 from datetime import datetime
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, CallbackContext
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -15,8 +15,7 @@ SELECTING_NEWS, ADDING_COMMENT = range(2)
 # Настройка логирования
 logging.basicConfig(
     filename='bot.log',
-    filemode='a',
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
@@ -27,216 +26,100 @@ openai.api_key = os.getenv('OPENAI_API_KEY')
 # Функция для парсинга новостей
 def parse_news(url):
     try:
-        logger.info(f"Запрос к URL: {url}")
         response = requests.get(url)
-        response.raise_for_status()
-
-        soup = BeautifulSoup(response.content, 'html.parser')
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
         articles = []
-        for article in soup.find_all('div', class_='collection-item-6'):
-            date_div = article.find('div', class_='text-block-30')
-            date_text = date_div.text.strip() if date_div else 'Дата отсутствует'
+        for article in soup.find_all('article'):
+            title = article.h2.text
+            url = article.a['href']
+            image = article.img['src']
+            
+            date_str = article.find('time')['datetime']
+            date = datetime.strptime(date_str, '%Y-%m-%d')
+            
+            articles.append({'title': title, 'url': url, 'img': image, 'date': date})
 
-            title_div = article.find('div', class_='text-block-27')
-            title_text = title_div.text.strip() if title_div else 'Нет заголовка'
-
-            source_div = article.find('div', class_='text-block-28')
-            source_text = source_div.text.strip() if source_div else 'Нет источника'
-
-            image = article.find('img')
-            image_url = image['src'] if image and 'src' in image.attrs else 'URL изображения отсутствует'
-
-            news_url = article.a['href'] if article.a and 'href' in article.a.attrs else 'URL новости отсутствует'
-
-            articles.append({
-                'date': date_text,
-                'title': title_text,
-                'source': source_text,
-                'image_url': image_url,
-                'news_url': news_url
-            })
-
-        logger.info(f"Найдено {len(articles)} новостей")
         return articles
-
+    
     except Exception as e:
-        logger.error(f"Ошибка при парсинге: {e}")
-    return []
-
+        print('Error parsing news:', e)
+        return []
+        
 # Функция для начала добавления комментария к новости
 def start_add_comment(update, context):
-    update.message.reply_text("Выберите новость, к которой хотите добавить комментарий:")
-    news_list = context.user_data.get('news_list')
-    if not news_list:
-        update.message.reply_text("Ошибка: Список новостей пуст.")
-        return ConversationHandler.END
-
-    context.user_data['news_list'] = news_list
-    context.user_data['commented_news'] = {}
-    context.user_data['selected_news'] = None
-
-    news_choices = [f"{i + 1}. {news['title']}" for i, news in enumerate(news_list)]
-    update.message.reply_text("\n".join(news_choices))
-
+    news = context.user_data['news']
+    
+    keyboard = [[i] for i in range(len(news))]
+    update.message.reply_text('Choose news to comment:', 
+                              reply_markup=ReplyKeyboardMarkup(keyboard))
+                              
     return SELECTING_NEWS
 
-# Функция для выбора новости для добавления комментария
+# Функция для выбора новости для добавления комментария  
 def select_news(update, context):
-    selected_index = int(update.message.text.split(".")[0]) - 1
-    news_list = context.user_data['news_list']
-
-    if 0 <= selected_index < len(news_list):
-        selected_news = news_list[selected_index]
-        context.user_data['selected_news'] = selected_news
-        update.message.reply_text(f"Вы выбрали новость: {selected_news['title']}. Теперь введите ваш комментарий:")
+    selected = int(update.message.text)
+    if 0 <= selected < len(context.user_data['news']):
+        context.user_data['selected'] = selected
+        update.message.reply_text('Enter your comment:')
         return ADDING_COMMENT
     else:
-        update.message.reply_text("Ошибка: Выбранная новость не найдена.")
+        update.message.reply_text('Invalid choice')
         return ConversationHandler.END
-
+        
 # Функция для добавления комментария к выбранной новости
 def add_comment(update, context):
     comment = update.message.text
-    selected_news = context.user_data['selected_news']
+    selected = context.user_data['selected']
+    
+    context.user_data['news'][selected]['comment'] = comment 
+    update.message.reply_text('Comment added!')
 
-    if selected_news:
-        selected_news['comment'] = comment
-        commented_news = context.user_data.get('commented_news', {})
-        commented_news[selected_news['title']] = selected_news
-        context.user_data['commented_news'] = commented_news
-
-        update.message.reply_text("Комментарий сохранен. Вы можете продолжить добавлять комментарии или отправить /publish, чтобы опубликовать новости в канале.")
-    else:
-        update.message.reply_text("Ошибка: Новость не выбрана.")
-
-    return SELECTING_NEWS
-
-# Функция для публикации новостей с комментариями в канале
-def publish_news(update, context):
-    commented_news = context.user_data.get('commented_news', {})
-
-    if not commented_news:
-        update.message.reply_text("Ошибка: Нет новостей с комментариями для публикации.")
-    else:
-        channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@bawion')
-        logger.info(f"Начало отправки новостей в канал {channel_name}")
-
-        for title, news in commented_news.items():
-            translated_title = translate_text_deepl(news['title'], 'ru')
-
-            source = news['source']
-            news_url = news['news_url']
-            image_url = news['image_url']
-            comment = news['comment']
-
-            news_text = f"{translated_title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
-            logger.info(f"Обнаружена новая статья для отправки: {translated_title}")
-
-            message = f"{news_text}\n\nЭкспертный комментарий:\n{comment}"
-            context.bot.send_message(chat_id=channel_name, text=message, parse_mode='Markdown')
-            logger.info(f"Новость отправлена: {translated_title}")
-
-        update.message.reply_text("Все новости с комментариями опубликованы.")
-
-    context.user_data.clear()
     return ConversationHandler.END
+    
+# Функция для публикации новостей с комментариями в канале  
+def publish_news(update, context):
+    news = context.user_data['news']
+    
+    for n in news:
+        text = '{}\n{}\n\nComment: {}'.format(n['title'], n['url'], n.get('comment'))
+        context.bot.send_message(chat_id='@channel', text=text)
 
+    update.message.reply_text('News published!')
+      
 # Функция для отправки новостей в Telegram
-def send_news(context: CallbackContext):
-    try:
-        channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@channel_bawion_bot')
-        logger.info(f"Начало отправки новостей в канал {channel_name}")
-        url = 'https://www.futuretools.io/news'
-        articles = parse_news(url)
+def send_news(context):
+    news = parse_news('https://example.com')
+    context.user_data['news'] = news
 
-        if not articles:
-            logger.info("Новостей для отправки нет.")
-            return
-
-        last_published_article_file = 'last_published_article.txt'
-        latest_article_date = datetime.min
-
-        for article in articles:
-            article_date = datetime.strptime(article['date'], '%B %d, %Y')
-            if is_new_article(article_date, last_published_article_file):
-                original_title = article['title']
-                target_language = 'ru'
-
-                translated_title = translate_text_deepl(original_title, target_language)
-
-                source = article['source']
-                news_url = article['news_url']
-                image_url = article['image_url']
-
-                news_text = f"{translated_title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})\n\nКомментарий эксперта:"
-                context.bot.send_message(chat_id=channel_name, text=news_text, parse_mode='Markdown')
-                logger.info(f"Обнаружена новая статья для отправки: {translated_title}")
-
-                latest_article_date = max(latest_article_date, article_date)
-
-        if latest_article_date > datetime.min:
-            update_last_published_article(latest_article_date, last_published_article_file)
-            logger.info(f"Дата последней опубликованной новости обновлена: {latest_article_date.strftime('%B %d, %Y')}")
-
-        logger.info("Завершение отправки новостей")
-    except Exception as e:
-        logger.error(f"Произошла ошибка при отправке новостей: {str(e)}")
-
-# Функция для проверки, является ли статья новой
-def is_new_article(article_date, last_published_article_file):
-    try:
-        with open(last_published_article_file, 'r') as file:
-            last_published_date_str = file.read().strip()
-            last_published_date = datetime.strptime(last_published_date_str, '%B %d, %Y') if last_published_date_str else datetime.min
-        logger.info(f"Последняя опубликованная дата: {last_published_date}")
-        logger.info(f"Дата статьи: {article_date}")
-        return article_date > last_published_date
-    except Exception as e:
-        logger.error(f"Ошибка при чтении файла {last_published_article_file}: {e}")
-        return False
-
-# Функция для обновления даты последней опубликованной статьи
-def update_last_published_article(article_date, last_published_article_file):
-    try:
-        with open(last_published_article_file, 'w') as file:
-            logger.info(f"Обновление файла {last_published_article_file} с датой {article_date.strftime('%B %d, %Y')}")
-            file.write(article_date.strftime('%B %d, %Y'))
-            logger.info(f"Файл {last_published_article_file} обновлен с датой {article_date.strftime('%B %d, %Y')}")
-    except Exception as e:
-        logger.error(f"Ошибка при обновлении файла {last_published_article_file}: {e}")
-
+    if news:
+        context.bot.send_message(chat_id='@me', text='Got {} news'.format(len(news)))
+    else:
+        context.bot.send_message(chat_id='@me', text='No news')
+        
 def main():
-    try:
-        token = os.getenv('TELEGRAM_BOT_TOKEN')
-        if not token:
-            logger.error("Токен Telegram BOT не найден. Проверьте переменные окружения.")
-            return
+    updater = Updater('TOKEN')
+    dispatcher = updater.dispatcher
 
-        updater = Updater(token)
-        dp = updater.dispatcher
+    dispatcher.add_handler(CommandHandler('start', start_add_comment)) 
+    dispatcher.add_handler(ConversationHandler(
+        entry_points=[CommandHandler('comment', start_add_comment)],
+        states={
+            SELECTING_NEWS: [MessageHandler(Filters.text, select_news)],
+            ADDING_COMMENT: [MessageHandler(Filters.text, add_comment)]
+        },
+        fallbacks=[]
+    ))
+    
+    dispatcher.add_handler(CommandHandler('publish', publish_news))
+    dispatcher.add_handler(CommandHandler('send', send_news))
 
-        dp.add_handler(CommandHandler('sendnews', send_news))
-        dp.add_handler(CommandHandler('publish', publish_news))
-        dp.add_handler(ConversationHandler(
-            entry_points=[MessageHandler(Filters.text & ~Filters.command, start_add_comment)],
-            states={
-                SELECTING_NEWS: [MessageHandler(Filters.text & ~Filters.command, select_news)],
-                ADDING_COMMENT: [MessageHandler(Filters.text & ~Filters.command, add_comment)],
-            },
-            fallbacks=[],
-        ))
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(send_news, 'interval', minutes=5)
+    scheduler.start()
 
-        # Настройка планировщика для регулярной отправки новостей
-        scheduler = BackgroundScheduler(timezone=pytz.utc)
-        scheduler.add_job(send_news, 'interval', minutes=150, args=[updater])
-        scheduler.start()
-
-        updater.start_polling()
-        updater.idle()
-
-    except Exception as e:
-        logger.error(f"Произошла ошибка при запуске бота: {str(e)}")
+    updater.start_polling()
+    updater.idle()
 
 if __name__ == '__main__':
     main()
-       
