@@ -8,6 +8,8 @@ import pytz
 import requests
 from bs4 import BeautifulSoup
 from translator import translate_text_deepl
+from telegram import ReplyKeyboardMarkup
+
 
 # Настройка логирования
 logging.basicConfig(
