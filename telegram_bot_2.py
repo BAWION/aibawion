@@ -2,7 +2,7 @@ import os
 import logging
 from datetime import datetime
 from functools import partial
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, CallbackContext
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, CallbackContext, ReplyKeyboardMarkup
 from apscheduler.schedulers.background import BackgroundScheduler
 import pytz
 import requests
@@ -66,7 +66,7 @@ def parse_news(url):
         return []
 
 # Функция для отправки новостей и комментариев в Telegram
-def send_news():
+def send_news(context: CallbackContext):
     try:
         channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@your_default_channel_name')
         logger.info(f"Начало отправки новостей в канал {channel_name}")
@@ -95,10 +95,6 @@ def send_news():
                 news_text = f"{translated_title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
                 logger.info(f"Обнаружена новая статья для отправки: {translated_title}")
 
-                # expert_commentary = generate_expert_commentary(translated_title)  # Используем переведенный заголовок
-                # if expert_commentary:
-                #     message = f"{news_text}\n\nЭкспертный комментарий:\n{expert_commentary}"
-                # else:
                 message = news_text
 
                 try:
@@ -127,96 +123,7 @@ def start(update, context):
     else:
         context.bot.send_message(chat_id=user_id, text="Привет! Я бот для управления функциями.")
 
-dp.add_handler(CommandHandler("start", start))
-
-
-# Функция для выбора новости для комментирования
-def select_news(update, context):
-    user_id = update.effective_user.id
-    if user_id == YOUR_ADMIN_USER_ID:
-        url = 'https://www.futuretools.io/news'
-        articles = parse_news(url)
-
-        if not articles:
-            update.message.reply_text("Новостей для отправки нет.")
-            return ConversationHandler.END
-
-        # Показать список новостей для выбора
-        news_keyboard = [[article['title']] for article in articles]
-        update.message.reply_text("Выберите новость для комментирования:", reply_markup=ReplyKeyboardMarkup(news_keyboard, one_time_keyboard=True))
-        
-        # Сохранить список новостей в контексте
-        context.user_data['articles'] = articles
-
-        return ADDING_COMMENT
-    else:
-        update.message.reply_text("Привет! Этот бот предназначен только для администратора.")
-        return ConversationHandler.END
-
-# Функция для добавления комментария к выбранной новости
-def add_comment(update, context):
-    user_id = update.effective_user.id
-    if user_id == YOUR_ADMIN_USER_ID:
-        selected_news_title = update.message.text
-        articles = context.user_data['articles']
-
-        for article in articles:
-            if article['title'] == selected_news_title:
-                news_to_comment[user_id] = article
-                update.message.reply_text(f"Введите комментарий эксперта к новости:\n{selected_news_title}")
-                return ConversationHandler.END
-
-        update.message.reply_text("Выбранная новость не найдена.")
-        return ConversationHandler.END
-    else:
-        update.message.reply_text("Привет! Этот бот предназначен только для администратора.")
-        return ConversationHandler.END
-
-# Функция для публикации новости с комментарием в телеграм-канале
-def publish_news(update, context):
-    user_id = update.effective_user.id
-    if user_id == YOUR_ADMIN_USER_ID:
-        comment = update.message.text
-        article = news_to_comment.get(user_id)
-
-        if article:
-            original_title = article['title']
-            target_language = 'ru'  # Устанавливаем русский язык как целевой для перевода
-
-            translated_title = translate_text_deepl(original_title, target_language)
-
-            source = article['source']
-            news_url = article['news_url']
-            image_url = article['image_url']
-
-            news_text = f"{translated_title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
-
-            message = f"{news_text}\n\nЭкспертный комментарий:\n{comment}"
-
-            try:
-                context.bot.send_message(chat_id=YOUR_CHANNEL_ID, text=message, parse_mode='Markdown')
-                update.message.reply_text("Новость опубликована в телеграм-канале.")
-            except Exception as e:
-                logger.error(f"Ошибка при отправке новости: {str(e)}")
-                update.message.reply_text("Произошла ошибка при публикации новости.")
-        else:
-            update.message.reply_text("Не удалось найти выбранную новость.")
-        return ConversationHandler.END
-    else:
-        update.message.reply_text("Привет! Этот бот предназначен только для администратора.")
-        return ConversationHandler.END
-
-# Функция для отмены операции
-def cancel(update, context):
-    user_id = update.effective_user.id
-    if user_id == YOUR_ADMIN_USER_ID:
-        update.message.reply_text("Операция отменена.")
-        return ConversationHandler.END
-    else:
-        update.message.reply_text("Привет! Этот бот предназначен только для администратора.")
-        return ConversationHandler.END
-
-# Функция для запуска бота
+# Создание объекта Updater и Dispatcher
 def main():
     try:
         token = os.getenv('TELEGRAM_BOT_TOKEN')
@@ -226,6 +133,8 @@ def main():
 
         updater = Updater(token)
         dp = updater.dispatcher
+
+        dp.add_handler(CommandHandler('start', start))
 
         # Создание ConversationHandler для управления состояниями бота
         conv_handler = ConversationHandler(
