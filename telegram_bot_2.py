@@ -26,29 +26,23 @@ def parse_news(url):
     try:
         logger.info(f"Запрос к URL: {url}")
         response = requests.get(url)
-        response.raise_for_status()  # проверить, что запрос прошел успешно
+        response.raise_for_status()
 
         soup = BeautifulSoup(response.content, 'html.parser')
-
         articles = []
         for article in soup.find_all('div', class_='collection-item-6'):
-            # Найти дату новости
             date_div = article.find('div', class_='text-block-30')
             date_text = date_div.text.strip() if date_div else 'Дата отсутствует'
 
-            # Найти заголовок новости
             title_div = article.find('div', class_='text-block-27')
             title_text = title_div.text.strip() if title_div else 'Нет заголовка'
 
-            # Найти домен источника новости
             source_div = article.find('div', class_='text-block-28')
             source_text = source_div.text.strip() if source_div else 'Нет источника'
 
-            # Найти URL изображения
             image = article.find('img')
             image_url = image['src'] if image and 'src' in image.attrs else 'URL изображения отсутствует'
 
-            # Собрать URL новости
             news_url = article.a['href'] if article.a and 'href' in article.a.attrs else 'URL новости отсутствует'
 
             articles.append({
@@ -121,7 +115,7 @@ def publish_news(update, context):
     if not commented_news:
         update.message.reply_text("Ошибка: Нет новостей с комментариями для публикации.")
     else:
-        channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@your_default_channel_name')
+        channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@bawion')
         logger.info(f"Начало отправки новостей в канал {channel_name}")
 
         for title, news in commented_news.items():
@@ -147,7 +141,7 @@ def publish_news(update, context):
 # Функция для отправки новостей и комментариев в Telegram
 def send_news(context: CallbackContext):
     try:
-        channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@your_default_channel_name')
+        channel_name = os.getenv('TELEGRAM_CHANNEL_NAME', '@channel_bawion_bot')
         logger.info(f"Начало отправки новостей в канал {channel_name}")
         url = 'https://www.futuretools.io/news'
         articles = parse_news(url)
@@ -163,7 +157,7 @@ def send_news(context: CallbackContext):
             article_date = datetime.strptime(article['date'], '%B %d, %Y')
             if is_new_article(article_date, last_published_article_file):
                 original_title = article['title']
-                target_language = 'ru'  # Устанавливаем русский язык как целевой для перевода
+                target_language = 'ru'
 
                 translated_title = translate_text_deepl(original_title, target_language)
 
@@ -171,23 +165,11 @@ def send_news(context: CallbackContext):
                 news_url = article['news_url']
                 image_url = article['image_url']
 
-                news_text = f"{translated_title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})"
+                news_text = f"{translated_title}\nИсточник: {source}\n[Читать далее]({news_url})\n![image]({image_url})\n\nКомментарий эксперта:"
+                context.bot.send_message(chat_id=channel_name, text=news_text, parse_mode='Markdown')
                 logger.info(f"Обнаружена новая статья для отправки: {translated_title}")
 
-                expert_commentary = generate_expert_commentary(translated_title)  # Используем переведенный заголовок
-                if expert_commentary:
-                    message = f"{news_text}\n\nЭкспертный комментарий:\n{expert_commentary}"
-                else:
-                    message = news_text
-
-                try:
-                    context.bot.send_message(chat_id=channel_name, text=message, parse_mode='Markdown')
-                    logger.info(f"Новость отправлена: {translated_title}")
-                    latest_article_date = max(latest_article_date, article_date)
-                except Exception as e:
-                    logger.error(f"Ошибка при отправке новости {translated_title}: {e}")
-            else:
-                logger.info("Статья не прошла проверку is_new_article и не будет отправлена.")
+                latest_article_date = max(latest_article_date, article_date)
 
         if latest_article_date > datetime.min:
             update_last_published_article(latest_article_date, last_published_article_file)
@@ -254,6 +236,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
+       
